@@ -11,7 +11,7 @@ access that server and must never execute public pull-request code.
   a native candidate. Full regression/units are enabled by default and can be
   disabled explicitly. The final resolved source commit is recorded.
 
-Runners: `nyra-macos-arm64`, `nyra-windows-x64`, `nyra-linux-x64`; all carry the
+Runners: `nyra-macos-arm64`, `nyra-windows-x64`, `nyra-linux-podman-x64`; all carry the
 `nyra-sdk` label plus native OS/architecture labels. Linux uses rootless Podman
 and a persistent state volume; workflow steps run inside that existing container.
 Nested Docker/service-container jobs are not supported by this deployment.

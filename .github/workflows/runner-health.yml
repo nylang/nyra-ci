@@ -14,25 +14,24 @@ jobs:
         include:
           - host: macos-arm64
             labels: [self-hosted, macOS, ARM64, nyra-sdk]
-            shell: bash
-            python: python3
           - host: linux-x64
             labels: [self-hosted, Linux, X64, nyra-sdk]
-            shell: bash
-            python: python3
           - host: windows-x64
             labels: [self-hosted, Windows, X64, nyra-sdk]
-            shell: powershell
-            python: python
     runs-on: ${{ matrix.labels }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Check native tools and private-source connectivity
-        shell: ${{ matrix.shell }}
-        run: ${{ matrix.python }} -B scripts/health.py
+      - name: Check native tools and private-source connectivity (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/health.py
+      - name: Check native tools and private-source connectivity (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: python -B scripts/health.py
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:

@@ -1,0 +1,7 @@
+self-hosted-runner:
+  labels:
+    - nyra-sdk
+    - nyra-macos-arm64
+    - nyra-macos-x86_64
+    - nyra-linux-x64
+    - nyra-windows-x64

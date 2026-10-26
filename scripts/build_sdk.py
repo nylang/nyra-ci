@@ -19,12 +19,16 @@ if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", ref):
     raise ValueError("invalid source reference")
 config = json.loads((control / "sdk-seeds.json").read_text())
 asset = config["hosts"][host]
-cache = Path(os.environ["RUNNER_TOOL_CACHE"]) / "nyra-sdk" / config["version"] / host
+cache_root = Path(os.environ.get("NYRA_CI_CACHE_DIRECTORY", os.environ["RUNNER_TOOL_CACHE"]))
+cache = cache_root / "nyra-sdk" / config["version"] / host
 sdk = cache / "sdk"
-work = Path(os.environ["RUNNER_TEMP"]) / ("nyra-sdk-" + os.environ["GITHUB_RUN_ID"] + "-" + os.environ["GITHUB_RUN_ATTEMPT"])
+release_mode = os.environ.get("NYRA_CI_RELEASE") == "true"
+work_root = cache_root / "nyra-release-work" if release_mode else Path(os.environ["RUNNER_TEMP"])
+work_root.mkdir(parents=True, exist_ok=True)
+work = work_root / ("nyra-sdk-" + os.environ["GITHUB_RUN_ID"] + "-" + os.environ["GITHUB_RUN_ATTEMPT"])
 work.mkdir(parents=True, exist_ok=False)
 receipt = {"host": host, "source_ref": ref, "seed_version": config["version"],
-           "workspace": str(work), "success": False, "published": False}
+           "workspace": str(work), "execution_mode": os.environ.get("NYRA_CI_EXECUTION_MODE", "native"), "success": False, "published": False}
 
 
 def run(command, cwd=None, env=None):
@@ -70,6 +74,9 @@ try:
     run(["git", "submodule", "update", "--init", "--recursive", "--",
          "third_party/nllvm", "third_party/json", "third_party/yaml", "third_party/net_core"], source)
     receipt["source_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
+    if release_mode:
+        from release_common import spec, check_source
+        check_source(source, spec(os.environ["GITHUB_REF_NAME"]))
     environment = os.environ.copy()
     for key in tuple(environment):
         if key.startswith("NYRA"):
@@ -77,12 +84,14 @@ try:
     bootstrap = source / "cache/ci/bootstrap"
     command = [sys.executable, "-B", "build.py", "bootstrap", "--seed", str(seed),
                "--out-dir", str(bootstrap), "-j", "4", "--timeout", "7200"]
-    if os.environ.get("NYRA_CI_FULL_REGRESSION", "true").lower() == "true":
+    if release_mode or os.environ.get("NYRA_CI_FULL_REGRESSION", "true").lower() == "true":
         command.append("--regression")
     run(command, source, environment)
     candidate = work / "sdk"
-    run([sys.executable, "-B", "build.py", "sdk", "--input-dir", str(bootstrap),
-         "--candidate", "--out-dir", str(candidate)], source, environment)
+    command = [sys.executable, "-B", "build.py", "sdk", "--input-dir", str(bootstrap), "--out-dir", str(candidate)]
+    if not release_mode:
+        command.append("--candidate")
+    run(command, source, environment)
     receipt.update(success=True, sdk=str(candidate), bootstrap_report=str(bootstrap / "bootstrap-report.json"))
 finally:
     (control / "build-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")

@@ -1,0 +1,123 @@
+name: Release SDK from version tag
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+# The same machines retain build trees between jobs. Serialize releases with
+# manual SDK builds as well; never let another version replace retained state.
+concurrency:
+  group: sdk-source-build
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: [self-hosted, macOS, ARM64, nyra-sdk]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate immutable release plan and destination
+        env:
+          SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
+        run: python3 -B scripts/release_prepare.py
+  native:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: darwin-arm64
+            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+          - host: darwin-x86_64
+            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
+          - host: linux-x86_64
+            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
+          - host: windows-x86_64
+            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 720
+    env:
+      NYRA_CI_HOST: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Bootstrap, regress, and build assigned runtime libraries (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/release_build.py
+      - name: Bootstrap, regress, and build assigned runtime libraries (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/release_build.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: runtime-catalog-${{ matrix.host }}
+          path: catalog-output/
+          if-no-files-found: error
+          retention-days: 3
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: release-build-receipt-${{ matrix.host }}
+          path: build-receipt.json
+          retention-days: 3
+  package:
+    needs: native
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: darwin-arm64
+            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+          - host: darwin-x86_64
+            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
+          - host: linux-x86_64
+            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
+          - host: windows-x86_64
+            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 90
+    env:
+      NYRA_CI_HOST: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: runtime-catalog-*
+          path: catalog-input/
+      - name: Validate complete capability set and export public SDK (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/release_package.py
+      - name: Validate complete capability set and export public SDK (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/release_package.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: public-sdk-${{ matrix.host }}
+          path: public-output/
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: package
+    # This worker has no compiler checkout, source key, or retained build state.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: public-sdk-*
+          path: publish-input/
+          merge-multiple: true
+      - name: Verify archives, upload draft assets, then publish
+        env:
+          SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
+        run: python3 -B scripts/publish_release.py --directory publish-input --tag "$GITHUB_REF_NAME" --publish

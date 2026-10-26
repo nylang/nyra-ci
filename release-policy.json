@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "public_repository": "nylang/sdk",
+  "hosts": ["darwin-arm64", "darwin-x86_64", "linux-x86_64", "windows-x86_64"],
+  "targets": ["darwin-arm64", "darwin-x86_64", "linux-x86_64", "windows-x86_64", "android-arm64", "android-x86_64", "ios-arm64", "ios-simulator-arm64", "linux-riscv64", "none-riscv64", "nyraos-riscv64"],
+  "packages": ["kernel", "ntest", "stdlib"],
+  "macos_minimum": "14.0",
+  "ios_minimum": "15.0",
+  "android_api": 28,
+  "ndk_revision": "26.1.10909125",
+  "cross_producers": {
+    "darwin-arm64": ["android-arm64", "android-x86_64", "ios-arm64", "ios-simulator-arm64"],
+    "darwin-x86_64": [],
+    "linux-x86_64": ["linux-riscv64", "none-riscv64", "nyraos-riscv64"],
+    "windows-x86_64": []
+  }
+}

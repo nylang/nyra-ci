@@ -2,3 +2,8 @@ health.json
 build-receipt.json
 __pycache__/
 *.pyc
+
+catalog-output/
+catalog-input/
+public-output/
+publish-input/

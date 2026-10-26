@@ -45,7 +45,7 @@ jobs:
         run: python3 -B scripts/build_sdk.py
       - name: Build private SDK (Windows)
         if: runner.os == 'Windows'
-        shell: powershell
+        shell: cmd
         env:
           NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
           NYRA_CI_FULL_REGRESSION: ${{ inputs.full_regression }}

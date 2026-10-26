@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import socket
+import urllib.parse
 import subprocess
 import sys
 
@@ -18,6 +20,9 @@ def run(command):
 
 
 try:
+    report["source_addresses"] = sorted({str(r[4][0]) for r in socket.getaddrinfo("git.nexusx.dev", 80, type=socket.SOCK_STREAM)})
+    report["proxy_endpoints"] = {k: urllib.parse.urlsplit(v).hostname for k, v in os.environ.items()
+                                if k.lower() in ("http_proxy", "https_proxy", "all_proxy")}
     run(["git", "--version"])
     run(["git", "ls-remote", "http://git.nexusx.dev/nyra/nyra-lang.git", "refs/heads/main"])
     if platform.system() == "Darwin":

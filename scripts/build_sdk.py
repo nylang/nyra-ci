@@ -10,6 +10,7 @@ import sys
 import tarfile
 import urllib.request
 import zipfile
+from source_access import SOURCE_URL, source_environment
 
 control = Path(__file__).resolve().parents[1]
 host = os.environ["NYRA_CI_HOST"]
@@ -63,10 +64,11 @@ try:
     seed = sdk / "hosts" / host / "bin" / ("nyrac.exe" if os.name == "nt" else "nyrac")
     source = work / "source"
     run(["git", "init", str(source)])
-    run(["git", "remote", "add", "origin", "http://git.nexusx.dev/nyra/nyra-lang.git"], source)
-    run(["git", "fetch", "--depth", "1", "origin", ref], source)
+    run(["git", "remote", "add", "origin", SOURCE_URL], source)
+    run(["git", "fetch", "--depth", "1", "origin", ref], source, source_environment())
     run(["git", "checkout", "--detach", "FETCH_HEAD"], source)
-    run(["git", "submodule", "update", "--init", "--recursive"], source)
+    run(["git", "submodule", "update", "--init", "--recursive", "--",
+         "third_party/nllvm", "third_party/json", "third_party/yaml", "third_party/net_core"], source)
     receipt["source_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
     environment = os.environ.copy()
     for key in tuple(environment):

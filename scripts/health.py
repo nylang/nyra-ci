@@ -8,13 +8,14 @@ import socket
 import urllib.parse
 import subprocess
 import sys
+from source_access import SOURCE_URL, source_environment
 
 report = {"system": platform.system(), "machine": platform.machine(),
           "python": sys.version, "python_executable": sys.executable, "checks": []}
 
 
-def run(command):
-    result = subprocess.run(command, text=True, capture_output=True, timeout=45)
+def run(command, env=None):
+    result = subprocess.run(command, text=True, capture_output=True, timeout=45, env=env)
     report["checks"].append({"tool": command[0], "ok": result.returncode == 0,
                              "output": (result.stdout + result.stderr).strip()[:2000]})
 
@@ -24,7 +25,7 @@ try:
     report["proxy_endpoints"] = {k: urllib.parse.urlsplit(v).hostname for k, v in os.environ.items()
                                 if k.lower() in ("http_proxy", "https_proxy", "all_proxy")}
     run(["git", "--version"])
-    run(["git", "ls-remote", "http://git.nexusx.dev/nyra/nyra-lang.git", "refs/heads/main"])
+    run(["git", "ls-remote", SOURCE_URL, "refs/heads/main"], source_environment())
     if platform.system() == "Darwin":
         run(["xcrun", "--show-sdk-path"])
         run(["clang", "--version"])

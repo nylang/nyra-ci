@@ -7,7 +7,12 @@ SOURCE_URL = "ssh://smarttang@git.nexusx.dev/nyra/nyra-lang.git"
 
 
 def source_environment():
-    directory = Path(os.environ["RUNNER_WORKSPACE"]).parents[1] / "keys"
+    if os.environ.get("NYRA_CI_RUNNER_DIRECTORY"):
+        directory = Path(os.environ["NYRA_CI_RUNNER_DIRECTORY"]).expanduser() / "keys"
+    elif os.environ.get("RUNNER_WORKSPACE"):
+        directory = Path(os.environ["RUNNER_WORKSPACE"]).parents[1] / "keys"
+    else:
+        raise RuntimeError("set NYRA_CI_RUNNER_DIRECTORY to the configured runner for local release planning")
     key = directory / "source_ed25519"
     hosts = directory / "known_hosts"
     if not key.is_file() or not hosts.is_file():

@@ -15,6 +15,11 @@
       "url": "https://github.com/nylang/sdk/releases/download/v1.0.1/nyra-sdk-1.0.1-windows-x86_64.zip",
       "sha256": "dc7ecf8cc6fb0b72d0ce3428f0cd57b3d13743dc2d807ce9ff54302a1b0dc97e",
       "file": "nyra-sdk-1.0.1-windows-x86_64.zip"
+    },
+    "darwin-x86_64": {
+      "url": "https://github.com/nylang/sdk/releases/download/v1.0.1/nyra-sdk-1.0.1-darwin-x86_64.tar.gz",
+      "sha256": "a5fe53482af2f9144d813b8fe9095f75851cc87ff24185954e4d311c17cf921f",
+      "file": "nyra-sdk-1.0.1-darwin-x86_64.tar.gz"
     }
   }
 }

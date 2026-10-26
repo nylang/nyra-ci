@@ -25,6 +25,8 @@ jobs:
         include:
           - host: darwin-arm64
             labels: [self-hosted, macOS, ARM64, nyra-sdk]
+          - host: darwin-x86_64
+            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
           - host: linux-x86_64
             labels: [self-hosted, Linux, X64, nyra-sdk]
           - host: windows-x86_64

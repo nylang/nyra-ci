@@ -11,6 +11,7 @@ import sys
 from source_access import SOURCE_URL, source_environment
 
 report = {"system": platform.system(), "machine": platform.machine(),
+          "execution_mode": os.environ.get("NYRA_CI_EXECUTION_MODE", "native"),
           "python": sys.version, "python_executable": sys.executable, "checks": []}
 
 
@@ -28,6 +29,10 @@ try:
     run(["git", "ls-remote", SOURCE_URL, "refs/heads/main"], source_environment())
     if platform.system() == "Darwin":
         run(["xcrun", "--show-sdk-path"])
+        translated = subprocess.run(["sysctl", "-in", "sysctl.proc_translated"], capture_output=True, text=True)
+        report["rosetta"] = translated.stdout.strip() == "1"
+        expected = "x86_64" if os.environ.get("RUNNER_ARCH") == "X64" else "arm64"
+        report["checks"].append({"tool": "Python architecture", "ok": platform.machine() == expected, "output": platform.machine()})
         run(["clang", "--version"])
     elif platform.system() == "Linux":
         run(["gcc", "--version"])

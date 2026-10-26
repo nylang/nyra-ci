@@ -1,0 +1,56 @@
+name: Build private SDK candidates
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Trusted private source branch, tag, or commit
+        type: string
+        default: main
+        required: true
+      full_regression:
+        description: Run full regression per generation and G3 package/compiler units
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: sdk-source-build
+  cancel-in-progress: false
+jobs:
+  build:
+    name: ${{ matrix.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: darwin-arm64
+            labels: [self-hosted, macOS, ARM64, nyra-sdk]
+            shell: bash
+            python: python3
+          - host: linux-x86_64
+            labels: [self-hosted, Linux, X64, nyra-sdk]
+            shell: bash
+            python: python3
+          - host: windows-x86_64
+            labels: [self-hosted, Windows, X64, nyra-sdk]
+            shell: powershell
+            python: python
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Build current private source through G3 and assemble candidate
+        shell: ${{ matrix.shell }}
+        env:
+          NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
+          NYRA_CI_FULL_REGRESSION: ${{ inputs.full_regression }}
+          NYRA_CI_HOST: ${{ matrix.host }}
+        run: ${{ matrix.python }} -B scripts/build_sdk.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: build-receipt-${{ matrix.host }}
+          path: build-receipt.json
+          retention-days: 3

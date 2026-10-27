@@ -100,10 +100,11 @@ The macOS Intel runner uses an explicit `LLVM_PREFIX` built with Apple Clang
 from the official LLVM 21.1.8 source archive pinned by the compiler repository's
 `third_party/llvm/SOURCE.json`. The SDK 1.0.1 compiler remains the unmodified seed;
 its historical Intel LLVM payload is not the release toolchain. Linux runs with
-an 8-CPU quota and two concurrent regression cases to avoid linker oversubscription.
+a 12-CPU/12-GiB quota and two concurrent regression cases; independent 1.0.3
+qualification currently shares that same container.
 Each macOS runner uses one regression worker; both architectures share the same
-desktop. The existing harness compilation timeout floor for Unix is 600 seconds
-and retained in the bootstrap report. A loaded ARM compiler/link case completed
+desktop. The existing harness outer timeout floor is 600 seconds on macOS and 1800
+seconds on Linux, retained in each bootstrap report. A loaded ARM compiler/link case completed
 with all assertions passing in 352 seconds after exceeding its default 180-second
 outer budget. API deadline assertions and the complete 492-case selection remain
 required for every generation.
@@ -141,3 +142,14 @@ kit. Core projection units launch clang by name; the service does not inherit
 the interactive administrator's user PATH. `Windows service Core preflight`
 replays all retained Core units under the actual service token without replacing
 that PATH, so interactive checks cannot conceal this difference.
+
+The fourth attempt of run `40531841067` completed the Windows native SDK gates:
+three complete 492-case generations, G2/G3 fixed point and all 1,040 native units.
+Concurrent 1.0.3 qualification in the Linux container then pushed a complete
+compiler build to 816 seconds and `face_cvarargs_variadic` past its 600-second
+outer process budget. Two concurrent complete diagnostic replays passed in
+293.81 and 250.81 seconds with a 2400-second diagnostic ceiling. Linux now has
+an 1800-second release ceiling to accommodate the observed shared-host peak.
+Runtime assertions and all 492 cases remain required; no expected output changed.
+The unpublished private tag is rebuilt under the previously approved exception,
+with the same frozen compiler source `abc82ec742ecef694659044d5e0d31457cba5032`.

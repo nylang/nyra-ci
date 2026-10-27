@@ -81,10 +81,10 @@ try:
     for key in tuple(environment):
         if key.startswith("NYRA"):
             environment.pop(key)
-    # Unix LLVM static links can exceed short test budgets; macOS also shares
-    # a busy desktop. This outer budget does not change API deadline assertions.
+    # LLVM links share host resources with independent qualification work.
+    # The outer process budget does not change runtime deadline assertions.
     if host.startswith(("darwin-", "linux-")):
-        environment["NYRA_REGRESSION_MIN_TIMEOUT"] = "600"
+        environment["NYRA_REGRESSION_MIN_TIMEOUT"] = "1800" if host == "linux-x86_64" else "600"
     bootstrap = source / "cache/ci/bootstrap"
     # Both macOS architectures share one physical host. LLVM links also create
     # their own workers; preserve capacity for cases with bounded timeout clocks.

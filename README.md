@@ -5,7 +5,9 @@ on the private Git server. This repository must remain private: its runners can
 access that server and must never execute public pull-request code.
 
 - `Runner health`: runs on trusted `main` pushes or manual dispatch; checks
-  native tools and private-source connectivity on all four runners.
+  native tools and private-source connectivity on all four runners. Windows
+  also probes file, dangling and directory symbolic links under the actual
+  service account; interactive administrator checks are insufficient.
 - `Build private SDK candidates`: manual dispatch only; downloads checksum-pinned
   SDK 1.0.1 seeds, fetches an explicit source ref, bootstraps G1/G2/G3 and assembles
   a native candidate. Full regression/units are enabled by default and can be

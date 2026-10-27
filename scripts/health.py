@@ -8,6 +8,7 @@ import socket
 import urllib.parse
 import subprocess
 import sys
+import tempfile
 from source_access import SOURCE_URL, source_environment
 
 report = {"system": platform.system(), "machine": platform.machine(),
@@ -39,6 +40,31 @@ try:
         run(["g++", "--version"])
         run(["pkg-config", "--modversion", "zlib", "libxml-2.0", "liblzma", "libzstd"])
     else:
+        # Run under the actual service token: interactive administrator access
+        # does not prove that the runner can execute stdlib symbolic-link tests.
+        with tempfile.TemporaryDirectory(prefix="nyra-runner-links-") as directory:
+            root = Path(directory)
+            target = root / "target.txt"
+            target.write_text("runner symbolic-link probe")
+            link = root / "file-link"
+            link.symlink_to(target)
+            if link.read_text() != target.read_text():
+                raise RuntimeError("file symbolic-link read failed")
+            target.unlink()
+            if not link.is_symlink() or link.exists():
+                raise RuntimeError("dangling symbolic-link detection failed")
+            link.unlink()
+            folder = root / "directory"
+            folder.mkdir()
+            link = root / "directory-link"
+            link.symlink_to(folder, target_is_directory=True)
+            moved = root / "renamed-directory-link"
+            link.rename(moved)
+            if not moved.is_dir() or not moved.is_symlink():
+                raise RuntimeError("directory symbolic-link rename failed")
+            moved.unlink()
+        report["checks"].append({"tool": "Service symbolic links", "ok": True,
+                                 "output": "file, dangling, directory and rename probes passed"})
         locator = Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)")) / "Microsoft Visual Studio/Installer/vswhere.exe"
         result = subprocess.run([str(locator), "-latest", "-products", "*", "-requires",
                                  "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"],

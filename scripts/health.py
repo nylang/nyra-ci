@@ -42,6 +42,7 @@ try:
         run(["file", "--version"])
         run(["readelf", "--version"])
         run(["ldd", "--version"])
+        run(["riscv64-linux-gnu-gcc", "-print-sysroot"])
         run(["pkg-config", "--modversion", "zlib", "libxml-2.0", "liblzma", "libzstd"])
     else:
         run(["clang", "--version"])

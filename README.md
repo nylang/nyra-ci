@@ -171,3 +171,11 @@ packages, and the backed-up Quadlet definition points to it for future recreatio
 Concurrent qualification processes and their files were preserved. Diagnostic
 continuation from the retained G3 is not formal release acceptance; the final
 source and control identities require a fresh complete release workflow.
+
+The RISC-V GNU/Linux producer queries `riscv64-linux-gnu-gcc -print-sysroot`
+unless `NYRA_CI_RISCV_SYSROOT` is explicitly configured. Ubuntu's installed
+cross driver reports `/`; `/usr/riscv64-linux-gnu` is its libc package prefix,
+not the complete GCC sysroot. Using that prefix hid the installed GCC CRT
+objects from Clang. Native assembly and offline acceptance passed before this
+configuration fault was found by the assigned cross-profile preflight. Health
+also checks that the distribution cross driver can report its sysroot.

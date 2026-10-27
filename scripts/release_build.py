@@ -42,7 +42,10 @@ for target in configuration['cross_producers'][host]:
     else:
         record['toolchain'] = str(sdk / 'hosts' / host / 'llvm')
         if target == 'linux-riscv64':
-            record['sysroot'] = os.environ.get('NYRA_CI_RISCV_SYSROOT', '/usr/riscv64-linux-gnu')
+            # Distribution cross packages report their complete sysroot via GCC;
+            # the libc package prefix alone omits GCC CRT lookup on Ubuntu.
+            record['sysroot'] = os.environ.get('NYRA_CI_RISCV_SYSROOT') or subprocess.check_output(
+                ['riscv64-linux-gnu-gcc', '-print-sysroot'], text=True).strip()
     path = source / 'cache/ci/target-configs' / (target + '.json')
     write(path, record)
     configs.append(path)

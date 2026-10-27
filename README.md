@@ -99,11 +99,17 @@ from the official LLVM 21.1.8 source archive pinned by the compiler repository's
 `third_party/llvm/SOURCE.json`. The SDK 1.0.1 compiler remains the unmodified seed;
 its historical Intel LLVM payload is not the release toolchain. Linux runs with
 an 8-CPU quota and two concurrent regression cases to avoid linker oversubscription.
+Each macOS runner uses one regression worker; both architectures share the same
+desktop. The existing harness compilation timeout floor is set to 600 seconds
+and retained in the bootstrap report. A loaded ARM compiler/link case completed
+with all assertions passing in 352 seconds after exceeding its default 180-second
+outer budget. API deadline assertions and the complete 492-case selection remain
+required for every generation.
 
 On 2026-10-27 the user explicitly authorized one exception to the immutable
 private tag rule: rebuild the **unpublished private** `v1.0.2` tag after failed
 run `40510719258`, incorporating official-source Intel LLVM build support.
 The replaced plan pinned source `ccdd53b7a4ea79fcfbda4c8f053d38c04368ce5d`;
-the replacement pins `5d25ffeb7ade3b1d260bd1531fbf45a7cd15fd6d`.
+the replacement pins `41ba019d32c9288f33306c19d2a87a0902e882b4`.
 No public SDK 1.0.2 release or tag existed when the exception was approved.
 This does not authorize changing an existing public release or relaxing gates.

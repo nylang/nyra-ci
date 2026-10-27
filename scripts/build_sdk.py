@@ -81,10 +81,14 @@ try:
     for key in tuple(environment):
         if key.startswith("NYRA"):
             environment.pop(key)
+    # The macOS runners share a busy desktop, and Intel executes under Rosetta.
+    # This existing harness budget covers compilation, not API deadline behavior.
+    if host.startswith("darwin-"):
+        environment["NYRA_REGRESSION_MIN_TIMEOUT"] = "600"
     bootstrap = source / "cache/ci/bootstrap"
-    # Two concurrent compiler-link regressions already run LLVM's own linker
-    # workers. Leave CPU capacity for ordinary cases and their timeout clocks.
-    jobs = "2" if host == "linux-x86_64" else "4"
+    # Both macOS architectures share one physical host. LLVM links also create
+    # their own workers; preserve capacity for cases with bounded timeout clocks.
+    jobs = "1" if host.startswith("darwin-") else "2" if host == "linux-x86_64" else "4"
     command = [sys.executable, "-B", "build.py", "bootstrap", "--seed", str(seed),
                "--out-dir", str(bootstrap), "-j", jobs, "--timeout", "7200"]
     if release_mode or os.environ.get("NYRA_CI_FULL_REGRESSION", "true").lower() == "true":

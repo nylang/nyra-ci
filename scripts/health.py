@@ -38,6 +38,7 @@ try:
     elif platform.system() == "Linux":
         run(["gcc", "--version"])
         run(["g++", "--version"])
+        run(["clang", "--version"])
         run(["pkg-config", "--modversion", "zlib", "libxml-2.0", "liblzma", "libzstd"])
     else:
         # Run under the actual service token: interactive administrator access

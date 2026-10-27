@@ -135,3 +135,9 @@ The Linux container service search path includes the unchanged SDK 1.0.1 LLVM
 21.1.8 `bin` directory. Core C projection units invoke `clang` by name, in addition
 to the explicit CC used for bootstrap. Preserve that seed cache while this runner
 configuration depends on it; health checks now require clang to be discoverable.
+
+Windows also prefixes its runner-local PATH with the unchanged pinned SDK LLVM
+kit. Core projection units launch clang by name; the service does not inherit
+the interactive administrator's user PATH. `Windows service Core preflight`
+replays all retained Core units under the actual service token without replacing
+that PATH, so interactive checks cannot conceal this difference.

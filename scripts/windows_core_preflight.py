@@ -36,9 +36,12 @@ environment = prepare_process_test_tools(bootstrap / 'native-generations/snapsho
 names = [line[6:] for line in (bootstrap / 'units/nyra/run.log').read_text().splitlines() if line.startswith('BEGIN ')]
 if len(names) != 74 or len(set(names)) != 74:
     raise ValueError('unexpected retained unit inventory')
+binary = bootstrap / 'units/nyra/tests'
+if not binary.is_file():
+    raise ValueError('retained Core unit executable is missing')
 results = []
 for index, name in enumerate(names):
-    result = subprocess.run([str(bootstrap / 'units/nyra/tests.exe'), str(index)],
+    result = subprocess.run([str(binary), str(index)], executable=str(binary),
         cwd=bootstrap / 'native-generations/snapshot', env=environment,
         capture_output=True, text=True, timeout=120)
     results.append({'name': name, 'exit_code': result.returncode, 'output': result.stdout + result.stderr})

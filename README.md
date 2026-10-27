@@ -153,3 +153,21 @@ an 1800-second release ceiling to accommodate the observed shared-host peak.
 Runtime assertions and all 492 cases remain required; no expected output changed.
 The unpublished private tag is rebuilt under the previously approved exception,
 with the same frozen compiler source `abc82ec742ecef694659044d5e0d31457cba5032`.
+
+### Linux artifact assembly prerequisites
+
+The runner image includes `file`, `readelf` and `ldd`; health checks verify these
+commands before release work. SDK 1.0.2 run `40574272950` passed all three
+492-case generations, fixed point and 1040 native units on every host, but its
+Linux artifact collection stopped at the previously missing `file` command.
+Post-bootstrap preflight then exposed the system ICU dependencies of Ubuntu's
+`libxml2`. The source fix recognizes `libicuuc` and `libicudata` only from the
+existing system library paths; missing and developer-directory libraries remain
+rejected. The unchanged SDK 1.0.1 seed was preserved.
+
+The running container received the inspection utility without a restart. A clean
+extension image `localhost/nyra-ci-linux:2.338.1-release-tools` contains the same
+packages, and the backed-up Quadlet definition points to it for future recreation.
+Concurrent qualification processes and their files were preserved. Diagnostic
+continuation from the retained G3 is not formal release acceptance; the final
+source and control identities require a fresh complete release workflow.

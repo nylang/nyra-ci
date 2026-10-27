@@ -39,6 +39,9 @@ try:
         run(["gcc", "--version"])
         run(["g++", "--version"])
         run(["clang", "--version"])
+        run(["file", "--version"])
+        run(["readelf", "--version"])
+        run(["ldd", "--version"])
         run(["pkg-config", "--modversion", "zlib", "libxml-2.0", "liblzma", "libzstd"])
     else:
         run(["clang", "--version"])

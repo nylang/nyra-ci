@@ -1,6 +1,6 @@
 {
-  "notes": "Fix premature retirement of returned ARC-backed move-only owners and selected variant-arm ownership checks. Include implicit SDK runtime dependency resolution and aligned compiler/analyzer identities. Build macOS Intel LLVM 21.1.8 from checksum-pinned official sources using Apple Clang. Full four-host clean-source bootstrap, fixed-point, regression, unit and SDK export gates are required before publication.",
+  "notes": "Fix premature retirement of returned ARC-backed move-only owners and selected variant-arm ownership checks. Include implicit SDK runtime dependency resolution and aligned compiler/analyzer identities. Build macOS Intel LLVM 21.1.8 from checksum-pinned official sources using Apple Clang. Full four-host clean-source bootstrap, fixed-point, regression, unit and SDK export gates are required before publication. Recognize distribution ICU dependencies of Linux libxml2 while requiring system library paths.",
   "schema_version": 1,
-  "source_commit": "abc82ec742ecef694659044d5e0d31457cba5032",
+  "source_commit": "44c7223c571fc964d3c159410d6467db8b260181",
   "version": "1.0.2"
 }

@@ -1,0 +1,6 @@
+{
+  "notes": "Fix premature retirement of returned ARC-backed move-only owners. Include implicit SDK runtime dependency resolution and align compiler/analyzer release identities. Full native bootstrap, fixed-point, regression, unit and SDK export gates are required before publication.",
+  "schema_version": 1,
+  "source_commit": "99b28c1dc77eb8955bc8def4438d429d2bc19433",
+  "version": "1.0.2"
+}

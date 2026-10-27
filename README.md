@@ -93,8 +93,17 @@ The pipeline configuration is deployed, but a successful health run is not a
 release acceptance run. No new SDK is published until a version tag is pushed
 and every release gate succeeds.
 
-Current source baseline: root `VERSION` is `1.0.1`, while the checked-in
-bootstrap toolchain lock is `1.0.0`. Existing public 1.0.1 SDKs were packaging
-patches. The release-plan helper correctly rejects that mismatch; it does not
-silently relabel existing compiler binaries. Align the next source release's
-version, lock and tool versions before creating its plan.
+Current release source and bootstrap toolchain lock are stamped `1.0.2`.
+The macOS Intel runner uses an explicit `LLVM_PREFIX` built with Apple Clang
+from the official LLVM 21.1.8 source archive pinned by the compiler repository's
+`third_party/llvm/SOURCE.json`. The SDK 1.0.1 compiler remains the unmodified seed;
+its historical Intel LLVM payload is not the release toolchain. Linux runs with
+an 8-CPU quota and two concurrent regression cases to avoid linker oversubscription.
+
+On 2026-10-27 the user explicitly authorized one exception to the immutable
+private tag rule: rebuild the **unpublished private** `v1.0.2` tag after failed
+run `40510719258`, incorporating official-source Intel LLVM build support.
+The replaced plan pinned source `ccdd53b7a4ea79fcfbda4c8f053d38c04368ce5d`;
+the replacement pins `5d25ffeb7ade3b1d260bd1531fbf45a7cd15fd6d`.
+No public SDK 1.0.2 release or tag existed when the exception was approved.
+This does not authorize changing an existing public release or relaxing gates.

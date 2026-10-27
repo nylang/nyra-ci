@@ -82,8 +82,11 @@ try:
         if key.startswith("NYRA"):
             environment.pop(key)
     bootstrap = source / "cache/ci/bootstrap"
+    # Two concurrent compiler-link regressions already run LLVM's own linker
+    # workers. Leave CPU capacity for ordinary cases and their timeout clocks.
+    jobs = "2" if host == "linux-x86_64" else "4"
     command = [sys.executable, "-B", "build.py", "bootstrap", "--seed", str(seed),
-               "--out-dir", str(bootstrap), "-j", "4", "--timeout", "7200"]
+               "--out-dir", str(bootstrap), "-j", jobs, "--timeout", "7200"]
     if release_mode or os.environ.get("NYRA_CI_FULL_REGRESSION", "true").lower() == "true":
         command.append("--regression")
     run(command, source, environment)

@@ -123,3 +123,15 @@ The complete gates are rerun for this updated source plan.
 Run `40528036309` exposed the same short outer compilation budget on Linux
 (`windows_absolute_paths`, 180 seconds). Unix release runners now use the
 validated 600-second floor; no case is filtered or converted to expected failure.
+
+Windows release units require symbolic links under the runner service account.
+The user authorized Developer Mode on 2026-10-28; the pre-change registry state
+is retained on the host. Runner-local process Git configuration also sets
+`core.autocrlf=false`: the system Git default otherwise rewrites exact YAML
+corpus goldens to CRLF. Do not normalize the expected outputs or skip those tests.
+The health workflow verifies both requirements under the actual service token.
+
+The Linux container service search path includes the unchanged SDK 1.0.1 LLVM
+21.1.8 `bin` directory. Core C projection units invoke `clang` by name, in addition
+to the explicit CC used for bootstrap. Preserve that seed cache while this runner
+configuration depends on it; health checks now require clang to be discoverable.

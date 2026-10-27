@@ -1,0 +1,37 @@
+name: Windows service Core preflight
+on:
+  workflow_dispatch:
+    inputs:
+      retained_run:
+        required: true
+        type: string
+      retained_attempt:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  service:
+    runs-on: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Check actual service tools and permissions
+        shell: cmd
+        run: python -B scripts/health.py
+      - name: Replay all retained Core units without replacing service PATH
+        shell: cmd
+        env:
+          NYRA_RETAINED_RUN: ${{ inputs.retained_run }}
+          NYRA_RETAINED_ATTEMPT: ${{ inputs.retained_attempt }}
+        run: python -B scripts/windows_core_preflight.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: windows-service-preflight
+          path: |
+            health.json
+            service-preflight.json
+          retention-days: 3

@@ -41,6 +41,12 @@ try:
         run(["clang", "--version"])
         run(["pkg-config", "--modversion", "zlib", "libxml-2.0", "liblzma", "libzstd"])
     else:
+        endings = subprocess.run(["git", "config", "--type=bool", "--default", "false",
+                                   "--get", "core.autocrlf"], capture_output=True,
+                                  text=True, timeout=30)
+        report["checks"].append({"tool": "Exact Git source bytes",
+                                 "ok": endings.returncode == 0 and endings.stdout.strip() == "false",
+                                 "output": "core.autocrlf=" + endings.stdout.strip()})
         # Run under the actual service token: interactive administrator access
         # does not prove that the runner can execute stdlib symbolic-link tests.
         with tempfile.TemporaryDirectory(prefix="nyra-runner-links-") as directory:

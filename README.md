@@ -110,6 +110,6 @@ On 2026-10-27 the user explicitly authorized one exception to the immutable
 private tag rule: rebuild the **unpublished private** `v1.0.2` tag after failed
 run `40510719258`, incorporating official-source Intel LLVM build support.
 The replaced plan pinned source `ccdd53b7a4ea79fcfbda4c8f053d38c04368ce5d`;
-the replacement pins `41ba019d32c9288f33306c19d2a87a0902e882b4`.
+the replacement pins `7669723a29e21cc617e68ab9c5e8b21e42b3a0cb`.
 No public SDK 1.0.2 release or tag existed when the exception was approved.
 This does not authorize changing an existing public release or relaxing gates.

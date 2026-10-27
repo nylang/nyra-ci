@@ -41,6 +41,7 @@ try:
         run(["clang", "--version"])
         run(["pkg-config", "--modversion", "zlib", "libxml-2.0", "liblzma", "libzstd"])
     else:
+        run(["clang", "--version"])
         endings = subprocess.run(["git", "config", "--type=bool", "--default", "false",
                                    "--get", "core.autocrlf"], capture_output=True,
                                   text=True, timeout=30)

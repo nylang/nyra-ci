@@ -81,9 +81,9 @@ try:
     for key in tuple(environment):
         if key.startswith("NYRA"):
             environment.pop(key)
-    # The macOS runners share a busy desktop, and Intel executes under Rosetta.
-    # This existing harness budget covers compilation, not API deadline behavior.
-    if host.startswith("darwin-"):
+    # Unix LLVM static links can exceed short test budgets; macOS also shares
+    # a busy desktop. This outer budget does not change API deadline assertions.
+    if host.startswith(("darwin-", "linux-")):
         environment["NYRA_REGRESSION_MIN_TIMEOUT"] = "600"
     bootstrap = source / "cache/ci/bootstrap"
     # Both macOS architectures share one physical host. LLVM links also create

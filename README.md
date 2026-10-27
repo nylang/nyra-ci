@@ -100,7 +100,7 @@ from the official LLVM 21.1.8 source archive pinned by the compiler repository's
 its historical Intel LLVM payload is not the release toolchain. Linux runs with
 an 8-CPU quota and two concurrent regression cases to avoid linker oversubscription.
 Each macOS runner uses one regression worker; both architectures share the same
-desktop. The existing harness compilation timeout floor is set to 600 seconds
+desktop. The existing harness compilation timeout floor for Unix is 600 seconds
 and retained in the bootstrap report. A loaded ARM compiler/link case completed
 with all assertions passing in 352 seconds after exceeding its default 180-second
 outer budget. API deadline assertions and the complete 492-case selection remain
@@ -117,3 +117,7 @@ This does not authorize changing an existing public release or relaxing gates.
 The prepublication run `40525185668` was cancelled to include the upstream
 compiler-rt license and contributor credits in every exported LLVM kit.
 The complete gates are rerun for this updated source plan.
+
+Run `40528036309` exposed the same short outer compilation budget on Linux
+(`windows_absolute_paths`, 180 seconds). Unix release runners now use the
+validated 600-second floor; no case is filtered or converted to expected failure.

@@ -121,9 +121,24 @@ class Github:
             data=json.dumps(payload).encode() if payload is not None else None, method=method,
             headers={'Authorization': 'Bearer ' + self.token, 'Accept': 'application/vnd.github+json',
                      'Content-Type': 'application/json', 'User-Agent': 'Nyra-SDK-release'})
-        with urllib.request.urlopen(request, timeout=60) as response:
-            data = response.read()
-            return json.loads(data) if data else None
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                data = response.read()
+                return json.loads(data) if data else None
+        except urllib.error.HTTPError as error:
+            try:
+                message = json.loads(error.read()).get('message', '')
+            except (ValueError, UnicodeError):
+                message = ''
+            finally:
+                error.close()
+            required = error.headers.get('X-Accepted-GitHub-Permissions', '')
+            details = ' '.join(str(message).split())[:1000]
+            if required:
+                details += ' (required permissions: ' + required + ')'
+            if details:
+                error.msg = str(error.msg) + ': ' + details
+            raise
 
     def upload(self, release, file):
         url = urllib.parse.urlsplit(release['upload_url'].split('{', 1)[0])
@@ -148,6 +163,29 @@ class Github:
             return json.loads(body)
         finally:
             connection.close()
+
+
+def find_release(github, tag):
+    """Find published versions or a unique draft without creating duplicates."""
+    try:
+        return github.api('/releases/tags/' + urllib.parse.quote(tag, safe=''))
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+        error.close()
+    # The by-tag endpoint returns published releases. Drafts require listing
+    # releases with an authenticated actor that has access to the draft.
+    matches = []
+    page = 1
+    while True:
+        rows = github.api('/releases?per_page=100&page=' + str(page))
+        matches.extend(row for row in rows if row['tag_name'] == tag)
+        if len(rows) < 100:
+            break
+        page += 1
+    if len(matches) > 1:
+        raise ValueError('multiple releases use this tag; inspect before retrying')
+    return matches[0] if matches else None
 
 
 def main():
@@ -197,11 +235,8 @@ def main():
         raise ValueError('SDK destination must be the expected public repository')
     marker = 'Nyra SDK ' + args.tag + '\nSource: ' + plan['source_commit']
     body = marker + '\n\n' + plan['notes'] + '\n\nUnsigned and not notarized. macOS x86_64 execution environment is recorded in release.json.'
-    try:
-        release = github.api('/releases/tags/' + args.tag)
-    except urllib.error.HTTPError as error:
-        if error.code != 404:
-            raise
+    release = find_release(github, args.tag)
+    if release is None:
         commit = github.api('/commits/' + urllib.parse.quote(repo['default_branch'], safe=''))['sha']
         release = github.api('/releases', {'tag_name': args.tag, 'target_commitish': commit,
             'name': 'Nyra SDK ' + args.tag, 'body': body, 'draft': True, 'prerelease': False})

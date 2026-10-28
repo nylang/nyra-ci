@@ -179,3 +179,22 @@ not the complete GCC sysroot. Using that prefix hid the installed GCC CRT
 objects from Clang. Native assembly and offline acceptance passed before this
 configuration fault was found by the assigned cross-profile preflight. Health
 also checks that the distribution cross driver can report its sysroot.
+
+### Publication API recovery
+
+SDK 1.0.2 run `40597935931` passed all four native builds and public export
+jobs from source `44c7223c571fc964d3c159410d6467db8b260181` and control
+`e6bff1137e67781756405fd02dddaa635e284db2`. Its final release-creation API call
+returned HTTP 403. Publication-only retries retain those exact verified
+artifacts; they do not require repeating successful compiler acceptance.
+
+Draft recovery uses the releases list: GitHub's by-tag endpoint returns
+published releases and cannot reliably discover a draft. Multiple matching
+releases fail closed. API errors preserve HTTP status and report GitHub's
+message and required-permission header without logging credentials. Five focused
+regression tests cover draft lookup, pagination, conflicts and authorization
+failures. The SDK release secret remains restricted to `nylang/sdk` and requires
+Contents write. A target that changes workflow files relative to the default
+branch additionally requires Workflows write, as described in the
+[official GitHub release API documentation](https://docs.github.com/en/rest/releases/releases#create-a-release).
+Do not copy account-wide credentials into this CI secret as a workaround.

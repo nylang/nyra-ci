@@ -18,7 +18,7 @@ def assemble():
     from public_policy import _payload_allowed
     output = ROOT / 'publish-input'
     output.mkdir(exist_ok=True)
-    work = Path(state['workspace']) / 'runtime-bundles'
+    work = Path(state['workspace']) / ('runtime-bundles-' + os.environ.get('GITHUB_RUN_ATTEMPT', '1'))
     work.mkdir(exist_ok=False)
     lock_path = Path(state['assembly_lock']) if state.get('assembly_lock') else Path(state['sdk']) / 'share/nyra/source-package-lock.json'
     lock = json.loads(lock_path.read_text())

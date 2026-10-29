@@ -126,3 +126,5 @@ replaced.
 
 The already accepted/published 1.0.4 is not requalified merely to migrate CI.
 Future source changes use a new release plan/version.
+
+After updating SDK_RELEASE_TOKEN, run **Publication credential preflight (no builds)**. It probes only destination permissions and does not repeat native seed checks or compiler suites.

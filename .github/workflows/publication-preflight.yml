@@ -1,0 +1,23 @@
+name: Publication credential preflight (no builds)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Verify draft, upload, digest and cleanup permissions
+        env:
+          SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
+        run: python3 -B scripts/publish_preflight.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: publication-preflight
+          path: publication-preflight.json
+          retention-days: 30

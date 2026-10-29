@@ -101,7 +101,10 @@ def verify(directory, plan, qualification_run=None):
         if (receipt.get('host'), receipt.get('source_commit'), receipt.get('version'), receipt.get('validation_policy'), receipt.get('success')) != (host, plan['source_commit'], plan['version'], 'g1-g2-v1', True):
             raise ValueError('native receipt identity mismatch')
         archive = receipt['archive']
-        path = directory / archive['path']
+        name = 'nyra-sdk-' + plan['version'] + '-' + host + ('.zip' if host.startswith('windows-') else '.tar.gz')
+        if archive['path'] != name:
+            raise ValueError('native receipt archive name mismatch')
+        path = directory / name
         if archive['sha256'] != sha(path) or archive['bytes'] != path.stat().st_size:
             raise ValueError('native receipt archive mismatch')
         validate_archive(path, receipt, plan, host)
@@ -117,6 +120,8 @@ def publish(github, files, plan, tag):
     body = 'Nyra SDK ' + tag + '\nSource: ' + plan['source_commit'] + '\n\n' + plan['notes'] + '\n\nQualified by CI using g1-g2-v1; exact accepted tool bytes. Runtime execution levels are recorded per target. Unsigned and not notarized.'
     release = find_release(github, tag)
     if release is None:
+        from public_docs import update
+        update(github, plan)
         commit = github.api('/commits/' + repo['default_branch'])['sha']
         release = github.api('/releases', dict(tag_name=tag, target_commitish=commit, name='Nyra SDK ' + tag, body=body, draft=True, prerelease=False))
     if release['body'] != body or release['prerelease']:
@@ -146,8 +151,6 @@ def publish(github, files, plan, tag):
         if asset['size'] != path.stat().st_size or asset.get('digest') != 'sha256:' + sha(path):
             raise ValueError('remote asset changed before publication')
     if release['draft']:
-        from public_docs import update
-        update(github, plan)
         release = github.api('/releases/' + str(release['id']), {'draft': False}, method='PATCH')
     if release['draft']:
         raise RuntimeError('publication was not confirmed')

@@ -37,7 +37,6 @@ try:
         # The public SDK selection/parser is exercised by the normal dry run.
         suffix = '.exe' if host.startswith('windows-') else ''
         command = [sys.executable, '-B', 'build.py', 'bootstrap', '--bootstrap-sdk', str(sdk),
-                   '--seed', str(sdk / 'hosts' / host / 'bin' / ('nyrac' + suffix)),
                    '--out-dir', str(Path(temp) / 'planned-bootstrap'), '--regression', '--plan']
         run(command, source, env)
         report['source_commit'] = commit

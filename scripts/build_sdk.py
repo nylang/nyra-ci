@@ -129,7 +129,7 @@ def build():
         bootstrap = work / 'bootstrap'
         jobs = '1' if host.startswith('darwin-') else '2' if host.startswith('linux-') else '4'
         run([sys.executable, '-B', 'build.py', 'bootstrap', '--bootstrap-sdk', sdk,
-             '--seed', compiler, '--out-dir', bootstrap, '-j', jobs,
+             '--out-dir', bootstrap, '-j', jobs,
              '--timeout', '7200', '--regression'], source, environment)
         candidate = work / 'sdk'
         run([sys.executable, '-B', 'build.py', 'sdk', '--input-dir', bootstrap,

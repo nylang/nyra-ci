@@ -63,7 +63,9 @@ is injected into native SDK implicit lookup.
 
 `release-policy.json` assigns each profile to one producer and records required
 physical, Rosetta, virtual or compile-only levels. Available execution targets
-cannot silently fall back to compilation. Windows ARM64 is compile-only while
+cannot silently fall back to compilation. Complete tool object worksets and both native bridges are also compiled for
+Linux arm64/riscv64 and Windows arm64, without claiming executable SDKs.
+Windows ARM64 is compile-only while
 its MSVC static CRT is unavailable. Compile-only does not claim executable,
 fixed-point or runtime-suite acceptance. Freestanding packages require explicit
 consumer startup, heap, output, counter and compiler-helper providers.
@@ -73,7 +75,11 @@ consumer startup, heap, output, counter and compiler-helper providers.
 Labels are `self-hosted` + `nyra-sdk`, with one host label:
 `nyra-macos-arm64`, `nyra-macos-x86_64`, `nyra-linux-x64`, `nyra-windows-x64`.
 The Intel Mac job uses an actual x86 Python under Rosetta. Builds serialize via
-`sdk-source-build`; target workers retain private work in a managed runner cache.
+`sdk-source-build`; the two macOS native builds additionally serialize on their
+shared machine. Completed build scratch is removed only after private evidence
+and exact public archives are uploaded; a small assembly tree remains retained.
+The Mac caches live under ~/.nyra/ci/cache to avoid background-service access
+to an external volume.
 
 `NYRA_CI_CACHE_DIRECTORY` overrides `RUNNER_TOOL_CACHE`. Required managed files:
 

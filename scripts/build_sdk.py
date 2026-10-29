@@ -154,6 +154,17 @@ def build():
                   'archive': {'path': archive.name, 'sha256': sha(archive), 'bytes': archive.stat().st_size},
                   'sdk_manifest_sha256': sha(Path(public['sdk']) / 'manifest.json')})
     finally:
+        evidence = ROOT / 'qualification-evidence'
+        shutil.rmtree(evidence, ignore_errors=True)
+        evidence.mkdir()
+        bootstrap = work / 'bootstrap'
+        if bootstrap.is_dir():
+            for path in bootstrap.rglob('*'):
+                relative = path.relative_to(bootstrap)
+                if path.is_file() and path.suffix in ('.json', '.log') and 'snapshot' not in relative.parts:
+                    target = evidence / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(path, target)
         write(ROOT / 'build-receipt.json', receipt)
 
 

@@ -48,6 +48,9 @@ jobs:
             labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
     runs-on: ${{ matrix.labels }}
     timeout-minutes: 720
+    concurrency:
+      group: native-build-${{ startsWith(matrix.host, 'darwin-') && 'shared-mac' || matrix.host }}
+      cancel-in-progress: false
     env:
       NYRA_CI_HOST: ${{ matrix.host }}
     steps:
@@ -82,6 +85,20 @@ jobs:
           name: release-build-receipt-${{ matrix.host }}
           path: build-receipt.json
           retention-days: 30
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: private-qualification-${{ matrix.host }}
+          path: qualification-evidence/
+          retention-days: 30
+      - name: Retain assembly inputs and release completed build scratch (Unix)
+        if: success() && runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/retain_assembly.py
+      - name: Release completed build scratch (Windows)
+        if: success() && runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/retain_assembly.py
   assemble:
     name: Assemble sealed publication bundle
     needs: native

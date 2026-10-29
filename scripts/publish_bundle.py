@@ -146,6 +146,8 @@ def publish(github, files, plan, tag):
         if asset['size'] != path.stat().st_size or asset.get('digest') != 'sha256:' + sha(path):
             raise ValueError('remote asset changed before publication')
     if release['draft']:
+        from public_docs import update
+        update(github, plan)
         release = github.api('/releases/' + str(release['id']), {'draft': False}, method='PATCH')
     if release['draft']:
         raise RuntimeError('publication was not confirmed')

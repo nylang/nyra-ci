@@ -68,6 +68,7 @@ def produce():
     build_platform.SRC = snapshot / 'source/platform/src'
     build_platform.INCLUDE = snapshot / 'source/platform/include'
     records = []
+    host_records = []
     for key in policy()['runtime_producers'][host]:
         row = target(key, llvm, config)
         packages = ('kernel', 'ntest', 'stdlib') if row.hosted else ('kernel', 'ntest')
@@ -94,10 +95,13 @@ def produce():
         required = policy()['execution_required'].get(key, 'compile-only')
         if evidence['acceptance_level'] != required or evidence.get('status') != 'passed':
             raise ValueError('runtime acceptance incomplete for ' + key)
+        if key in ('linux-arm64', 'linux-riscv64', 'windows-arm64'):
+            from host_compile import compile_host
+            host_records.append(compile_host(row, compiler, llvm, snapshot, Path(build['workspace']) / 'bootstrap', output / 'host-objects' / key))
         records.append(dict(key=key, triple=row.triple, abi=row.abi, hosted=row.hosted,
                             packages=list(packages), **evidence))
     write(output / 'catalog.json', dict(host=host, version=build['version'], source_commit=build['source_commit'],
-          control_commit=os.environ['GITHUB_SHA'], targets=records,
+          control_commit=os.environ['GITHUB_SHA'], targets=records, host_compilation=host_records,
           files={p.relative_to(output).as_posix(): sha(p) for p in (output / 'targets').rglob('*') if p.is_file()}))
     # Runtime catalogs contain public package payload and metadata only.
     shutil.rmtree(ROOT / 'runtime-output', ignore_errors=True)

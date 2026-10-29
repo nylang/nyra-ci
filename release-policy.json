@@ -118,5 +118,14 @@
     "rv64imac-lp64": "virtual-execution",
     "rv64gc-lp64d": "virtual-execution",
     "none-arm64": "virtual-execution"
+  },
+  "compile_only_hosts": {
+    "linux-x86_64": [
+      "linux-arm64",
+      "linux-riscv64"
+    ],
+    "windows-x86_64": [
+      "windows-arm64"
+    ]
   }
 }

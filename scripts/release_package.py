@@ -20,7 +20,8 @@ def assemble():
     output.mkdir(exist_ok=True)
     work = Path(state['workspace']) / 'runtime-bundles'
     work.mkdir(exist_ok=False)
-    lock = json.loads((Path(state['sdk']) / 'share/nyra/source-package-lock.json').read_text())
+    lock_path = Path(state['assembly_lock']) if state.get('assembly_lock') else Path(state['sdk']) / 'share/nyra/source-package-lock.json'
+    lock = json.loads(lock_path.read_text())
     targets = {}
     for host in policy()['hosts']:
         base = ROOT / 'catalog-input' / ('runtime-catalog-' + host)
@@ -34,6 +35,15 @@ def assemble():
             safe_name(name)
             if actual[name].is_symlink() or sha(actual[name]) != digest:
                 raise ValueError('runtime catalog changed: ' + name)
+        expected_hosts = set(policy()['compile_only_hosts'].get(host, []))
+        host_rows = catalog.get('host_compilation', [])
+        if len(host_rows) != len(expected_hosts) or {r['key'] for r in host_rows} != expected_hosts:
+            raise ValueError('compile-only host worksets missing')
+        for row in host_rows:
+            if row['acceptance_level'] != 'compile-only' or row['executable_package_ready'] or {r['name'] for r in row['tools']} != {'nyrac', 'nyra-analyzer', 'nyra'} or len(row['bridges']) != 2:
+                raise ValueError('incomplete compile-only host evidence')
+            if any(r['object_units'] <= 0 or len(r['objects']) != r['object_units'] for r in row['tools']):
+                raise ValueError('empty compile-only host workset')
         rows = catalog['targets']
         if {r['key'] for r in rows} != set(policy()['runtime_producers'][host]):
             raise ValueError('runtime producer target coverage mismatch')

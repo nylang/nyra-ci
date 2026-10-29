@@ -62,4 +62,3 @@ def _payload_allowed(name: str, host: str, targets: set[str]) -> bool:
     if name.startswith("frameworks/NyraRuntime.xcframework/"):
         return path.name == "Info.plist" or path.name == "libnyra_runtime.a" or name.endswith("/Headers/nyra_platform.h")
     return False
-

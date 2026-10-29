@@ -32,6 +32,11 @@ jobs:
         env:
           SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
         run: python3 -B scripts/release_prepare.py
+      - name: Fail early if automatic publication lacks write permission
+        if: github.event_name == 'push' || inputs.publish
+        env:
+          SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
+        run: python3 -B scripts/publish_preflight.py
   native:
     needs: prepare
     strategy:

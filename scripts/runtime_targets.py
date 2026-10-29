@@ -85,11 +85,14 @@ def produce():
         else:
             # Record whole-package external provider obligations; no OS assumed.
             names = set()
+            definitions = set()
             for package in packages:
                 archive = read_package(dest / package)['archive']
                 text = subprocess.check_output([str(llvm / 'bin' / ('llvm-nm.exe' if os.name == 'nt' else 'llvm-nm')), '--undefined-only', str(dest / package / archive)], text=True)
                 names.update(line.split()[-1] for line in text.splitlines() if len(line.split()) >= 2 and line.split()[-2] == 'U')
-            write(dest / 'provider-requirements.json', dict(profile=key, required_symbols=sorted(names), implicit_hosted_libraries=False))
+                defined = subprocess.check_output([str(llvm / 'bin' / ('llvm-nm.exe' if os.name == 'nt' else 'llvm-nm')), '--defined-only', '--extern-only', str(dest / package / archive)], text=True)
+                definitions.update(line.split()[-1] for line in defined.splitlines() if len(line.split()) >= 3)
+            write(dest / 'provider-requirements.json', dict(profile=key, scope='Whole-package external upper bound; reachable symbols depend on the consumer.', required_symbols=sorted(names - definitions), implicit_hosted_libraries=False))
         relocate_packages(output, key, lock, packages=packages)
         evidence = accept(row, compiler, llvm, dest, output / 'consumers' / key, source, config)
         required = policy()['execution_required'].get(key, 'compile-only')

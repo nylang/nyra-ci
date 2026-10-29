@@ -1,23 +1,34 @@
-name: Release SDK from version tag
+name: Qualify and release SDK
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Immutable release plan tag (releases/vX.Y.Z.json)
+        type: string
+        required: true
+      publish:
+        description: Publish the exact qualified bundle after all gates pass
+        type: boolean
+        default: false
 permissions:
   contents: read
-# The same machines retain build trees between jobs. Serialize releases with
-# manual SDK builds as well; never let another version replace retained state.
+  actions: read
 concurrency:
   group: sdk-source-build
   cancel-in-progress: false
+env:
+  NYRA_CI_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 jobs:
   prepare:
-    runs-on: [self-hosted, macOS, ARM64, nyra-sdk]
+    runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Validate immutable release plan and destination
+      - name: Validate immutable source and publication destination
         env:
           SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
         run: python3 -B scripts/release_prepare.py
@@ -43,44 +54,39 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Bootstrap, regress, and build assigned runtime libraries (Unix)
+      - name: Qualify G1/G2, bootstrap-built tools and assigned runtimes (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: python3 -B scripts/release_build.py
-      - name: Bootstrap, regress, and build assigned runtime libraries (Windows)
+      - name: Qualify G1/G2, bootstrap-built tools and assigned runtimes (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: python -B scripts/release_build.py
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: runtime-catalog-${{ matrix.host }}
-          path: catalog-output/
+          path: runtime-output/
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 30
+          compression-level: 0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: public-sdk-${{ matrix.host }}
+          path: public-output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: release-build-receipt-${{ matrix.host }}
           path: build-receipt.json
-          retention-days: 3
-  package:
+          retention-days: 30
+  assemble:
+    name: Assemble sealed publication bundle
     needs: native
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - host: darwin-arm64
-            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
-          - host: darwin-x86_64
-            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
-          - host: linux-x86_64
-            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
-          - host: windows-x86_64
-            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
-    runs-on: ${{ matrix.labels }}
+    runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
     timeout-minutes: 90
-    env:
-      NYRA_CI_HOST: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -89,23 +95,22 @@ jobs:
         with:
           pattern: runtime-catalog-*
           path: catalog-input/
-      - name: Validate complete capability set and export public SDK (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: public-sdk-*
+          path: publish-input/
+          merge-multiple: true
+      - name: Assemble separate runtime bundles and seal exact inventories
         run: python3 -B scripts/release_package.py
-      - name: Validate complete capability set and export public SDK (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: python -B scripts/release_package.py
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: public-sdk-${{ matrix.host }}
-          path: public-output/
+          name: qualified-release
+          path: publish-input/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30
+          compression-level: 0
   publish:
-    needs: package
-    # This worker has no compiler checkout, source key, or retained build state.
+    needs: assemble
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -114,10 +119,13 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          pattern: public-sdk-*
+          name: qualified-release
           path: publish-input/
-          merge-multiple: true
-      - name: Verify archives, upload draft assets, then publish
+      - name: Verify and optionally publish the same accepted bytes
         env:
           SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
-        run: python3 -B scripts/publish_release.py --directory publish-input --tag "$GITHUB_REF_NAME" --publish
+          PUBLISH_ACCEPTED: ${{ github.event_name == 'push' || inputs.publish }}
+        run: |
+          args=()
+          if [ "$PUBLISH_ACCEPTED" = "true" ]; then args+=(--publish); fi
+          python3 -B scripts/publish_bundle.py --directory publish-input --tag "$NYRA_CI_RELEASE_TAG" --qualification-run "$GITHUB_RUN_ID" "${args[@]}"

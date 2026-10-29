@@ -1,61 +1,71 @@
-name: Build private SDK candidates
+name: Qualify private native SDK candidates
 on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Trusted private source branch, tag, or commit
+        description: Trusted private source branch, tag, or commit (resolved once)
         type: string
         default: main
         required: true
-      full_regression:
-        description: Run full regression per generation and G3 package/compiler units
-        type: boolean
-        default: true
 permissions:
   contents: read
 concurrency:
   group: sdk-source-build
   cancel-in-progress: false
 jobs:
+  prepare:
+    runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+    outputs:
+      source_commit: ${{ steps.source.outputs.source_commit }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - id: source
+        env:
+          NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
+        run: python3 -B scripts/prepare_source.py
   build:
-    name: ${{ matrix.host }}
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
         include:
           - host: darwin-arm64
-            labels: [self-hosted, macOS, ARM64, nyra-sdk]
+            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
           - host: darwin-x86_64
             labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
           - host: linux-x86_64
-            labels: [self-hosted, Linux, X64, nyra-sdk]
+            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
           - host: windows-x86_64
-            labels: [self-hosted, Windows, X64, nyra-sdk]
+            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
     runs-on: ${{ matrix.labels }}
-    timeout-minutes: 360
+    timeout-minutes: 720
+    env:
+      NYRA_CI_SOURCE_REF: ${{ needs.prepare.outputs.source_commit }}
+      NYRA_CI_HOST: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Build private SDK (Unix)
+      - name: Qualify compiler and tools once (Unix)
         if: runner.os != 'Windows'
         shell: bash
-        env:
-          NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
-          NYRA_CI_FULL_REGRESSION: ${{ inputs.full_regression }}
-          NYRA_CI_HOST: ${{ matrix.host }}
         run: python3 -B scripts/build_sdk.py
-      - name: Build private SDK (Windows)
+      - name: Qualify compiler and tools once (Windows)
         if: runner.os == 'Windows'
         shell: cmd
-        env:
-          NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
-          NYRA_CI_FULL_REGRESSION: ${{ inputs.full_regression }}
-          NYRA_CI_HOST: ${{ matrix.host }}
         run: python -B scripts/build_sdk.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: public-sdk-${{ matrix.host }}
+          path: public-output/
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 0
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: build-receipt-${{ matrix.host }}
           path: build-receipt.json
-          retention-days: 3
+          retention-days: 30

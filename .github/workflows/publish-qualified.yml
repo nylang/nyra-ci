@@ -1,0 +1,43 @@
+name: Publish retained qualified bundle
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Immutable release plan tag
+        type: string
+        required: true
+      qualification_run:
+        description: Original Qualify and release SDK run ID (retained 30 days)
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: publish-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      NYRA_CI_RELEASE_TAG: ${{ inputs.tag }}
+      NYRA_CI_QUALIFICATION_RUN: ${{ inputs.qualification_run }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Verify original workflow, successful assembly and retained artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B scripts/authorize_retry.py
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: qualified-release
+          path: publish-input/
+          run-id: ${{ inputs.qualification_run }}
+          github-token: ${{ github.token }}
+      - name: Publish retained bytes without building or rerunning suites
+        env:
+          SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
+        run: python3 -B scripts/publish_bundle.py --directory publish-input --tag "$NYRA_CI_RELEASE_TAG" --qualification-run "$NYRA_CI_QUALIFICATION_RUN" --publish

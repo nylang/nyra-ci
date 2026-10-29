@@ -26,6 +26,9 @@ try:
     report["source_addresses"] = sorted({str(r[4][0]) for r in socket.getaddrinfo("git.nexusx.dev", 80, type=socket.SOCK_STREAM)})
     report["proxy_endpoints"] = {k: urllib.parse.urlsplit(v).hostname for k, v in os.environ.items()
                                 if k.lower() in ("http_proxy", "https_proxy", "all_proxy")}
+    from runner_inputs import verify_providers
+    machine = "arm64" if platform.machine().lower() in ("aarch64", "arm64") else "x86_64"
+    report["providers"] = verify_providers(platform.system().lower() + "-" + machine)
     run(["git", "--version"])
     run(["git", "ls-remote", SOURCE_URL, "refs/heads/main"], source_environment())
     if platform.system() == "Darwin":

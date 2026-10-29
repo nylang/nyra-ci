@@ -63,12 +63,12 @@ def check_source(source, plan):
 
 
 def check_sdk(data, plan, host):
-    if (data.get("format"), data.get("version"), data.get("host"), data.get("source_revision")) != ("nyra-sdk-v1", plan["version"], host, plan["source_commit"]):
+    if data.get("format") != "nyra-sdk-v2" or (data.get("version"), data.get("host"), data.get("source_revision")) != (plan["version"], host, plan["source_commit"]):
         raise ValueError("SDK identity differs from immutable release plan")
     if any(data.get("acceptance", {}).get(gate) is not True for gate in GATES):
         raise ValueError("release requires all clean-source, fixed-point, regression and unit gates")
-    if set(data["tools"]) != {"nyrac", "nyra-analyzer"} or any(row["version"] != plan["version"] for row in data["tools"].values()):
-        raise ValueError("compiler and analyzer versions must match the release")
+    if set(data["tools"]) != {"nyrac", "nyra-analyzer", "nyra"} or any(row["version"] != plan["version"] for row in data["tools"].values()):
+        raise ValueError("compiler, analyzer and package-manager versions must match the release")
 
 
 def safe_name(name):

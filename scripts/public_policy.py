@@ -14,7 +14,17 @@ def _payload_allowed(name: str, host: str, targets: set[str]) -> bool:
     parts = path.parts
     if any(part.startswith(".") or part.lower().endswith(".dsym") for part in parts) or name.lower().endswith(tuple(suffix.lower() for suffix in FORBIDDEN_SUFFIXES)):
         return False
-    if name in {f"hosts/{host}/bin/{executable_name(tool, host)}" for tool in ("nyrac", "nyra-analyzer")}:
+    if name in ("share/nyra/validation/compiler-regression.json",
+                "share/nyra/validation/tools/nyra.json","share/nyra/validation/tools/nyra-analyzer.json"):
+        return True
+    if name in ("share/nyra/package-manager.json","share/nyra/sources/libgit2-1.9.7.tar.gz",
+                "share/nyra/sources/libgit2-windows-long-paths.patch"):
+        return True
+    if len(parts)==3 and parts[0]=="packages" and parts[1] in PACKAGES and parts[2] in ("package.yaml","manifest.yaml"):
+        return True
+    if len(parts)>=5 and parts[0]=="packages" and parts[1] in PACKAGES and parts[2]=="targets" and parts[3] in targets:
+        return _payload_allowed("/".join(("targets",parts[3],parts[1],*parts[4:])),host,targets)
+    if name in {f"hosts/{host}/bin/{executable_name(tool, host)}" for tool in ("nyrac", "nyra-analyzer", "nyra")}:
         return True
     if name == f"hosts/{host}/share/nyra/analyzer/analysis_options.yaml":
         return True
@@ -23,7 +33,8 @@ def _payload_allowed(name: str, host: str, targets: set[str]) -> bool:
     llvm_prefix = f"hosts/{host}/llvm/"
     if name.startswith(llvm_prefix):
         relative = name[len(llvm_prefix):]
-        if relative in ("llvm-manifest.json", "provenance.json", "sbom.cdx.json", "lib/static-dependencies.json"):
+        if relative in ("llvm-manifest.json", "provenance.json", "sbom.cdx.json", "lib/static-dependencies.json",
+                        "nyra-source-build.json", "source.lock.json"):
             return True
         native = {*TOOLS, "llvm-config", "llvm-config.bin", "lld-link", "llvm-lib", "ld64.lld", "ld.lld"}
         if relative in {"bin/" + executable_name(tool, host) for tool in native}:
@@ -51,3 +62,4 @@ def _payload_allowed(name: str, host: str, targets: set[str]) -> bool:
     if name.startswith("frameworks/NyraRuntime.xcframework/"):
         return path.name == "Info.plist" or path.name == "libnyra_runtime.a" or name.endswith("/Headers/nyra_platform.h")
     return False
+

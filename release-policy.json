@@ -1,17 +1,122 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "public_repository": "nylang/sdk",
-  "hosts": ["darwin-arm64", "darwin-x86_64", "linux-x86_64", "windows-x86_64"],
-  "targets": ["darwin-arm64", "darwin-x86_64", "linux-x86_64", "windows-x86_64", "android-arm64", "android-x86_64", "ios-arm64", "ios-simulator-arm64", "linux-riscv64", "none-riscv64", "nyraos-riscv64"],
-  "packages": ["kernel", "ntest", "stdlib"],
+  "hosts": [
+    "darwin-arm64",
+    "darwin-x86_64",
+    "linux-x86_64",
+    "windows-x86_64"
+  ],
+  "targets": [
+    "darwin-arm64",
+    "darwin-x86_64",
+    "windows-x86_64",
+    "windows-arm64",
+    "linux-x86_64",
+    "linux-arm64",
+    "linux-riscv64",
+    "linux-musl-x86_64",
+    "linux-musl-arm64",
+    "android-arm64",
+    "android-x86_64",
+    "ios-arm64",
+    "ios-simulator-arm64",
+    "ios-simulator-x86_64",
+    "rv64imac-lp64",
+    "rv64gc-lp64d",
+    "none-arm64",
+    "none-x86_64"
+  ],
+  "packages": [
+    "kernel",
+    "ntest",
+    "stdlib"
+  ],
   "macos_minimum": "14.0",
   "ios_minimum": "15.0",
   "android_api": 28,
   "ndk_revision": "26.1.10909125",
-  "cross_producers": {
-    "darwin-arm64": ["android-arm64", "android-x86_64", "ios-arm64", "ios-simulator-arm64"],
-    "darwin-x86_64": [],
-    "linux-x86_64": ["linux-riscv64", "none-riscv64", "nyraos-riscv64"],
-    "windows-x86_64": []
+  "validation_policy": "g1-g2-v1",
+  "runtime_producers": {
+    "darwin-arm64": [
+      "darwin-arm64",
+      "android-arm64",
+      "android-x86_64",
+      "ios-arm64",
+      "ios-simulator-arm64",
+      "ios-simulator-x86_64",
+      "rv64imac-lp64",
+      "rv64gc-lp64d",
+      "none-arm64",
+      "none-x86_64"
+    ],
+    "darwin-x86_64": [
+      "darwin-x86_64"
+    ],
+    "linux-x86_64": [
+      "linux-x86_64",
+      "linux-arm64",
+      "linux-riscv64",
+      "linux-musl-x86_64",
+      "linux-musl-arm64"
+    ],
+    "windows-x86_64": [
+      "windows-x86_64",
+      "windows-arm64"
+    ]
+  },
+  "runtime_groups": {
+    "kernel-ntest-rv64imac-lp64": [
+      "rv64imac-lp64"
+    ],
+    "kernel-ntest-rv64gc-lp64d": [
+      "rv64gc-lp64d"
+    ],
+    "kernel-ntest-arm64": [
+      "none-arm64"
+    ],
+    "kernel-ntest-x86_64": [
+      "none-x86_64"
+    ],
+    "stdlib-macos": [
+      "darwin-arm64",
+      "darwin-x86_64"
+    ],
+    "stdlib-windows": [
+      "windows-x86_64",
+      "windows-arm64"
+    ],
+    "stdlib-linux-glibc": [
+      "linux-x86_64",
+      "linux-arm64",
+      "linux-riscv64"
+    ],
+    "stdlib-linux-musl": [
+      "linux-musl-x86_64",
+      "linux-musl-arm64"
+    ],
+    "stdlib-android": [
+      "android-arm64",
+      "android-x86_64"
+    ],
+    "stdlib-ios": [
+      "ios-arm64",
+      "ios-simulator-arm64",
+      "ios-simulator-x86_64"
+    ]
+  },
+  "execution_required": {
+    "darwin-arm64": "physical-execution",
+    "linux-x86_64": "physical-execution",
+    "linux-musl-x86_64": "physical-execution",
+    "windows-x86_64": "physical-execution",
+    "darwin-x86_64": "rosetta-execution",
+    "ios-simulator-arm64": "virtual-execution",
+    "linux-arm64": "virtual-execution",
+    "linux-riscv64": "virtual-execution",
+    "linux-musl-arm64": "virtual-execution",
+    "rv64imac-lp64": "virtual-execution",
+    "rv64gc-lp64d": "virtual-execution",
+    "none-arm64": "virtual-execution"
   }
 }

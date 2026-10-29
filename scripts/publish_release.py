@@ -77,12 +77,12 @@ def validate_archive(path, receipt, plan, host):
     if manifest['kind'] != 'release' or distribution.get('kind') != 'public' or distribution.get('policy') != 'nyra-public-sdk-v1':
         raise ValueError('stable publication requires a source-free public SDK')
     rows = manifest['targets'] + manifest.get('runtime_targets', [])
-    targets = set(policy()['targets'])
+    targets = {host}
     if len(rows) != len(targets) or {r['key'] for r in rows} != targets:
         raise ValueError('SDK target capability regression')
     for row in rows:
         packages = {p['name'] for p in row['packages']}
-        expected = {'kernel'} if row['key'] in ('none-riscv64', 'nyraos-riscv64') else set(policy()['packages'])
+        expected = set(policy()['packages'])
         if packages != expected or len(row['packages']) != len(expected):
             raise ValueError('SDK package closure differs from release policy')
     if host.startswith('darwin-') and manifest.get('minimum_os_version') != policy()['macos_minimum']:
@@ -102,7 +102,7 @@ def validate_archive(path, receipt, plan, host):
     for tool in manifest['tools'].values():
         if index[tool['path']]['sha256'] != tool['sha256']:
             raise ValueError('tool identity does not match payload')
-    required_licenses = {'Nyra SDK', 'yaml', 'json', 'nllvm', 'LLVM'}
+    required_licenses = {'Nyra SDK', 'yaml', 'json', 'nllvm', 'LLVM', 'libgit2'}
     if not required_licenses <= {r['name'] for r in distribution.get('licenses', [])}:
         raise ValueError('missing required legal notices')
     for row in distribution['licenses']:
@@ -189,80 +189,9 @@ def find_release(github, tag):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--directory', type=Path, required=True)
-    parser.add_argument('--tag', required=True)
-    parser.add_argument('--publish', action='store_true', help='publish only after complete local and remote validation')
-    args = parser.parse_args()
-    plan = spec(args.tag)
-    directory = args.directory.resolve()
-    reports = []
-    files = []
-    for host in policy()['hosts']:
-        receipt_path = directory / ('release-' + host + '.json')
-        receipt = json.loads(receipt_path.read_text())
-        extension = '.zip' if host.startswith('windows-') else '.tar.gz'
-        name = 'nyra-sdk-' + plan['version'] + '-' + host + extension
-        archive = directory / name
-        if receipt.get('host') != host or receipt.get('version') != plan['version'] or receipt.get('source_commit') != plan['source_commit']:
-            raise ValueError('public release receipt identity mismatch')
-        if receipt['archive'] != {'path': name, 'sha256': sha(archive), 'bytes': archive.stat().st_size}:
-            raise ValueError('public SDK archive checksum or size mismatch')
-        validate_archive(archive, receipt, plan, host)
-        reports.append(receipt)
-        files.extend((archive, receipt_path))
-    unexpected = {p.name for p in directory.iterdir()} - {f.name for f in files} - {'release.json', 'SHA256SUMS'}
-    if unexpected:
-        raise ValueError('publication directory contains unapproved files')
-    metadata = {'schema_version': 1, 'version': plan['version'], 'source_commit': plan['source_commit'],
-        'targets': policy()['targets'], 'hosts': policy()['hosts'], 'releases': reports,
-        'signing': 'not-attested', 'control_commit': os.environ.get('GITHUB_SHA', '')}
-    write(directory / 'release.json', metadata)
-    files.append(directory / 'release.json')
-    (directory / 'SHA256SUMS').write_text(''.join(sha(p) + '  ' + p.name + '\n' for p in sorted(files)))
-    files.append(directory / 'SHA256SUMS')
-    if not args.publish:
-        print('Publication inputs validated; no remote changes made')
-        return
-    if os.environ.get('GITHUB_REF_TYPE') != 'tag' or os.environ.get('GITHUB_REF_NAME') != args.tag:
-        raise ValueError('publishing requires the matching pushed tag workflow')
-    token = os.environ.get('SDK_RELEASE_TOKEN', '')
-    if not token:
-        raise ValueError('SDK_RELEASE_TOKEN is not configured')
-    github = Github(policy()['public_repository'], token)
-    repo = github.api('')
-    if repo['private'] or repo['full_name'] != policy()['public_repository']:
-        raise ValueError('SDK destination must be the expected public repository')
-    marker = 'Nyra SDK ' + args.tag + '\nSource: ' + plan['source_commit']
-    body = marker + '\n\n' + plan['notes'] + '\n\nUnsigned and not notarized. macOS x86_64 execution environment is recorded in release.json.'
-    release = find_release(github, args.tag)
-    if release is None:
-        commit = github.api('/commits/' + urllib.parse.quote(repo['default_branch'], safe=''))['sha']
-        release = github.api('/releases', {'tag_name': args.tag, 'target_commitish': commit,
-            'name': 'Nyra SDK ' + args.tag, 'body': body, 'draft': True, 'prerelease': False})
-    if not release['draft']:
-        raise ValueError('published versions are immutable; create a new version')
-    if release['body'] != body or release['prerelease']:
-        raise ValueError('existing draft belongs to a different release plan')
-    assets = {a['name']: a for a in github.api('/releases/' + str(release['id']) + '/assets?per_page=100')}
-    expected = {p.name: p for p in files}
-    if set(assets) - set(expected):
-        raise ValueError('existing draft contains unexpected assets; inspect before retrying')
-    for name, path in expected.items():
-        asset = assets.get(name) or github.upload(release, path)
-        if asset.get('size') != path.stat().st_size or asset.get('digest') != 'sha256:' + sha(path) or asset.get('state') != 'uploaded':
-            raise ValueError('remote asset SHA-256, size or state mismatch: ' + name)
-    remote = github.api('/releases/' + str(release['id']) + '/assets?per_page=100')
-    if len(remote) != len(expected) or {a['name'] for a in remote} != set(expected):
-        raise ValueError('remote release inventory is incomplete')
-    for asset in remote:
-        path = expected[asset['name']]
-        if asset.get('digest') != 'sha256:' + sha(path) or asset['size'] != path.stat().st_size:
-            raise ValueError('remote asset changed before publication')
-    published = github.api('/releases/' + str(release['id']), {'draft': False}, method='PATCH')
-    if published['draft']:
-        raise RuntimeError('GitHub did not confirm publication')
-    print('Published ' + published['html_url'])
+    # Preserve the historical entry point while using the sealed v2 controller.
+    from publish_bundle import main as publish_main
+    publish_main()
 
 
 if __name__ == '__main__':

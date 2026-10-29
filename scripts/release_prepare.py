@@ -7,9 +7,7 @@ import urllib.error
 import urllib.request
 from release_common import spec, policy, checkout, check_source
 
-tag = os.environ["GITHUB_REF_NAME"]
-if os.environ.get("GITHUB_REF_TYPE") != "tag":
-    raise ValueError("SDK publishing requires a pushed version tag")
+tag = os.environ["NYRA_CI_RELEASE_TAG"]
 plan = spec(tag)
 token = os.environ.get("SDK_RELEASE_TOKEN", "").strip()
 if not token:

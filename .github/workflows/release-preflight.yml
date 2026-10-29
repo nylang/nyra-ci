@@ -1,0 +1,83 @@
+name: Release infrastructure preflight (no rebuild)
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Trusted private source branch, tag, or commit (resolved once)
+        type: string
+        default: main
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: sdk-source-build
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+    outputs:
+      source_commit: ${{ steps.source.outputs.source_commit }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - id: source
+        env:
+          NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
+        run: python3 -B scripts/prepare_source.py
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: darwin-arm64
+            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+          - host: darwin-x86_64
+            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
+          - host: linux-x86_64
+            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
+          - host: windows-x86_64
+            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 30
+    env:
+      NYRA_CI_SOURCE_REF: ${{ needs.prepare.outputs.source_commit }}
+      NYRA_CI_HOST: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check release seed, providers and dry-run plan (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/release_preflight.py
+      - name: Check release seed, providers and dry-run plan (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/release_preflight.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: release-preflight-${{ matrix.host }}
+          path: release-preflight.json
+          retention-days: 30
+  publication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Run publication controller tests
+        run: python3 -B -m unittest discover -s tests -v
+      - name: Probe actual publication secret using a disposable draft
+        env:
+          SDK_RELEASE_TOKEN: ${{ secrets.SDK_RELEASE_TOKEN }}
+        run: python3 -B scripts/publish_preflight.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: publication-preflight
+          path: publication-preflight.json
+          retention-days: 30

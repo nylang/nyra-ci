@@ -1,11 +1,10 @@
-name: Windows service Core preflight
+name: Windows release preflight (no rebuild)
 on:
   workflow_dispatch:
     inputs:
-      retained_run:
-        required: true
-        type: string
-      retained_attempt:
+      source_ref:
+        description: Trusted private source branch or full commit
+        default: main
         required: true
         type: string
 permissions:
@@ -13,25 +12,20 @@ permissions:
 jobs:
   service:
     runs-on: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      NYRA_CI_HOST: windows-x86_64
+      NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Check actual service tools and permissions
+      - name: Check service permissions, published seed and bootstrap dry run
         shell: cmd
-        run: python -B scripts/health.py
-      - name: Replay all retained Core units without replacing service PATH
-        shell: cmd
-        env:
-          NYRA_RETAINED_RUN: ${{ inputs.retained_run }}
-          NYRA_RETAINED_ATTEMPT: ${{ inputs.retained_attempt }}
-        run: python -B scripts/windows_core_preflight.py
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        run: python -B scripts/release_preflight.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
-          name: windows-service-preflight
-          path: |
-            health.json
-            service-preflight.json
-          retention-days: 3
+          name: release-preflight-windows-x86_64
+          path: release-preflight.json
+          retention-days: 30

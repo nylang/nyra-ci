@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,8 @@ from runner_inputs import verify_providers, verify_build_tools
 from release_common import ROOT, checkout, sha, write
 
 host = os.environ['NYRA_CI_HOST']
+if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', os.environ['NYRA_CI_SOURCE_REF']):
+    raise ValueError('invalid source ref')
 report = dict(host=host, success=False, complete_suites_repeated=False, compiler_rebuilt=False)
 try:
     report.update(verify_providers(host))

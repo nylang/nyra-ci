@@ -31,8 +31,9 @@ have neither its SSH key nor a compiler checkout.
   inventory, archive contents and GitHub SHA-256 digests. Retention is 30 days;
   expiration is an error, never an implicit rebuild.
 
-The older Windows Core replay workflow is historical debugging infrastructure,
-not the release path. It does not establish current qualification.
+**Windows release preflight (no rebuild)** can repeat only the Windows seed/plan
+checks after a platform-specific orchestration correction; it does not rerun
+compiler suites. It replaces the historical G3 Core replay workflow.
 
 ## Native acceptance policy
 

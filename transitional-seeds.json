@@ -5,7 +5,7 @@
   ],
   "compilers": {
     "1.0.5": {
-      "source_commit": "c2f2e6090a3bf371c4286c4b24d443da53779b7e",
+      "source_commit": "98d4446bc320d1fbb20533d5f4cd9b1eb3ad277c",
       "hosts": {
         "darwin-x86_64": {
           "sha256": "8229f852ff6c6afee063adca20c5fefbb08761cc96026c37e8ef842bd41d39d5",
@@ -26,13 +26,17 @@
           }
         },
         "windows-x86_64": {
-          "sha256": "c09d5e21f2d4b579215439eb3a89e76387b8e0412ae25d81e4cdbb9809256ee6",
+          "sha256": "b537c6f830a917ef0f59a9ac8d98ee28cacac88f598220fb90886332793e4ce6",
           "provenance": {
-            "mode": "Native CompilerLink ObjectUnit replacement; explicit hybrid G0 only",
-            "base_source_commit": "7363fad76ad03ccb3a2841d98c382ca32880eb87",
-            "overlay_source_commit": "7aab93809c868dfa35e62ba0f2edf38979b5a248",
-            "record_sha256": "53c1dffc724b0da71d0803a0d3eede9e63b7a75fa6259c501ff6e337c65cfe47",
-            "native_old_fail_new_pass": true
+            "host": "windows-x86_64",
+            "source_commit": "c2f2e6090a3bf371c4286c4b24d443da53779b7e",
+            "compiler_sha256": "b537c6f830a917ef0f59a9ac8d98ee28cacac88f598220fb90886332793e4ce6",
+            "fixed_point": true,
+            "complete_regression_passed": 536,
+            "source_provenance": "E:\\nyra-ci-cache\\nyra-release-work\\41185466241-1-windows-x86_64\\bootstrap\\native-generations",
+            "purpose": "Explicit G0 only for correcting native Windows provider; precursor is not a qualified SDK because stdlib/package_core have native directory-link failures",
+            "qualified": false,
+            "cleanup": "Keep exact standalone G0 until corrected SDK and bootstrap consumers complete"
           }
         },
         "darwin-arm64": {

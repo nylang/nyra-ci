@@ -99,13 +99,7 @@
   "native_qualification_run": 41227114543,
   "native_qualification_workflow": ".github/workflows/sdk-build.yml",
   "source_commit": "238d12ceacb479a238a9d9a878e8e1a1fc549f6a",
-  "target_continuations": {
-    "windows-x86_64": {
-      "checkpoint_sha256": "e5a284075fa69a4daed69c0cc45b5c5028acdd8713f35c66485379688ed7e284",
-      "control_commit": "77d20c9ec51ea358a460bfc0dee97709fd5614c3",
-      "workspace": "41228338231-1-windows-x86_64"
-    }
-  },
+  "target_continuations": {},
   "target_imports": {
     "darwin-arm64": {
       "catalog_sha256": "5f9c00d4c11211b945c842e8c7d8740827798299acf3ce4122448e15c54c4483",
@@ -118,6 +112,12 @@
       "control_commit": "04b8b4fb7b6b46a4a3e639725cbaadf6c37de291",
       "qualification_attempt": 2,
       "qualification_run": 41227243738
+    },
+    "windows-x86_64": {
+      "catalog_sha256": "12bcb2483979ba2909713c213154ea52cb64db597d1fd91f777709fede6932b3",
+      "control_commit": "106caac82c67dcdb540a7e0563b9447e257da5c8",
+      "qualification_attempt": 1,
+      "qualification_run": 41230063858
     }
   }
 }

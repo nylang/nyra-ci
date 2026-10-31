@@ -62,8 +62,39 @@ def check_source(source, plan):
         raise ValueError(f"release identity mismatch: commit={commit}, VERSION={(Path(source) / 'VERSION').read_text().strip()}, toolchain_lock={lock['toolchain_version']}; expected commit={plan['source_commit']}, version={plan['version']}")
 
 
+def sdk_source_matches(data, plan, host):
+    """Keep actual build revisions; admit only a reviewed, hash-bound reuse proof."""
+    if data.get("source_revision") == plan["source_commit"]:
+        return True
+    catalog = ROOT / "qualified-inputs" / (plan["version"] + ".json")
+    if not catalog.is_file():
+        return False
+    config = json.loads(catalog.read_text())
+    if config.get("source_commit") != plan["source_commit"]:
+        return False
+    pin = config.get("native_source_equivalence", {}).get(host)
+    if not isinstance(pin, dict):
+        return False
+    path = ROOT / safe_name(pin["path"])
+    if not path.resolve().is_relative_to(ROOT.resolve()) or sha(path) != pin["sha256"]:
+        raise ValueError("native source equivalence proof changed")
+    proof = json.loads(path.read_text())
+    frontend = proof.get("frontend_gate", {})
+    return (proof.get("kind") == "approved-platform-effective-input-reuse-v1"
+            and proof.get("status") == "complete"
+            and proof.get("host") == host
+            and proof.get("actual_product_build_source_commit") == data.get("source_revision")
+            and proof.get("release_source_commit") == plan["source_commit"]
+            and proof.get("tools") == {name: row.get("sha256") for name, row in data["tools"].items()}
+            and frontend.get("status") == "ok"
+            and type(frontend.get("passed")) is int and frontend["passed"] > 0
+            and frontend.get("ran") == frontend["passed"]
+            and all(frontend.get(key) == 0 for key in ("failed", "skipped", "exit_code")))
+
+
 def check_sdk(data, plan, host):
-    if data.get("format") != "nyra-sdk-v2" or (data.get("version"), data.get("host"), data.get("source_revision")) != (plan["version"], host, plan["source_commit"]):
+    if (data.get("format") != "nyra-sdk-v2" or (data.get("version"), data.get("host")) != (plan["version"], host)
+            or not sdk_source_matches(data, plan, host)):
         raise ValueError("SDK identity differs from immutable release plan")
     if any(data.get("acceptance", {}).get(gate) is not True for gate in GATES):
         raise ValueError("release requires all clean-source, fixed-point, regression and unit gates")

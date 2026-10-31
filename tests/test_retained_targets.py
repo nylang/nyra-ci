@@ -7,7 +7,7 @@ import tarfile
 import tempfile
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from retained_targets import stage_git_headers, verify_native
+from retained_targets import retained_matrix, stage_git_headers, verify_native
 from release_common import sha, write
 
 
@@ -28,6 +28,17 @@ class RetainedInputTests(unittest.TestCase):
 
     def save(self):
         write(self.file, self.receipt)
+
+    def test_managed_macos_imports_do_not_download_nonexistent_ci_artifacts(self):
+        config = dict(managed_imports={'darwin-arm64': {}, 'darwin-x86_64': {}})
+        rows = {row['host']: row for row in retained_matrix(config, '123')['include']}
+        self.assertEqual(set(rows), {'darwin-arm64', 'darwin-x86_64', 'linux-x86_64', 'windows-x86_64'})
+        for host in ('darwin-arm64', 'darwin-x86_64'):
+            self.assertEqual(rows[host]['native_run'], '')
+        for host in ('linux-x86_64', 'windows-x86_64'):
+            self.assertEqual(rows[host]['native_run'], '123')
+        with self.assertRaisesRegex(ValueError, 'unknown managed'):
+            retained_matrix(dict(managed_imports={'linux-riscv64': {}}), '123')
 
     def test_accepted_native_archive_is_reused_as_is(self):
         path, receipt = verify_native(self.root, self.host, self.plan)

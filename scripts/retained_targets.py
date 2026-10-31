@@ -33,6 +33,19 @@ def verify_native(directory, host, plan, pin=None):
     return path, receipt
 
 
+def retained_matrix(config, run_id):
+    labels = {
+        'darwin-arm64': ['self-hosted', 'macOS', 'ARM64', 'nyra-sdk', 'nyra-macos-arm64'],
+        'darwin-x86_64': ['self-hosted', 'macOS', 'X64', 'nyra-sdk', 'nyra-macos-x86_64'],
+        'linux-x86_64': ['self-hosted', 'Linux', 'X64', 'nyra-sdk', 'nyra-linux-x64'],
+        'windows-x86_64': ['self-hosted', 'Windows', 'X64', 'nyra-sdk', 'nyra-windows-x64']}
+    managed = config.get('managed_imports', {})
+    if set(managed) - set(HOSTS):
+        raise ValueError('unknown managed native import host')
+    return {'include': [dict(host=host, labels=labels[host],
+        native_run='' if host in managed else run_id) for host in HOSTS]}
+
+
 def stage_git_headers(sdk, bootstrap):
     """Compile-only Git bridge work needs headers, not another libgit2 build."""
     metadata = json.loads((sdk / 'share/nyra/package-manager.json').read_text())
@@ -158,7 +171,8 @@ if __name__ == '__main__':
         if (native['path'], native['head_sha'], native['conclusion'], native['head_repository']['full_name']) != (
                 '.github/workflows/sdk-build.yml', config['native_control_commit'], 'success', repository):
             raise ValueError('native qualification workflow identity or completion mismatch')
+        matrix = retained_matrix(config, run_id)
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-            output.write('native_run=' + run_id + '\n')
+            output.write('matrix=' + json.dumps(matrix) + '\n')
     else:
         produce()

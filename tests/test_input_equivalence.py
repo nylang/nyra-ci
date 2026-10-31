@@ -27,7 +27,8 @@ class InputEquivalenceTests(unittest.TestCase):
         self.proof = dict(kind='approved-platform-effective-input-reuse-v1', status='complete', host=self.host,
                           actual_product_build_source_commit='a' * 40, release_source_commit='b' * 40,
                           tools={name: row['sha256'] for name, row in self.data['tools'].items()},
-                          frontend_gate=dict(status='ok', passed=470, ran=470, failed=0, skipped=0, exit_code=0))
+                          frontend_gate=dict(status='ok', passed=470, ran=470, failed=0, skipped=0, exit_code=0),
+                          nyra_gate=dict(status='ok', passed=95, ran=95, failed=0, skipped=0, exit_code=0))
         self.file = self.root / 'qualification-equivalence/mac.json'
         self.config = dict(source_commit='b' * 40, native_source_equivalence={self.host: dict(path='qualification-equivalence/mac.json')})
         self.save()
@@ -72,6 +73,12 @@ class InputEquivalenceTests(unittest.TestCase):
         self.save()
         self.config['source_commit'] = 'c' * 40
         write(self.root / 'qualified-inputs/9.0.0.json', self.config)
+        with self.assertRaisesRegex(ValueError, 'identity differs'):
+            check_sdk(self.data, self.plan, self.host)
+
+    def test_original_failed_nyra_scope_cannot_be_rescued_by_frontend_pass(self):
+        self.proof['nyra_gate'].update(status='FAILED', passed=94, failed=1)
+        self.save()
         with self.assertRaisesRegex(ValueError, 'identity differs'):
             check_sdk(self.data, self.plan, self.host)
 

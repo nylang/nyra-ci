@@ -1,0 +1,93 @@
+name: Continue approved native qualification scopes
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Reviewed scope-continuations version; no new generations or regression campaign
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: native-scope-continuation-${{ inputs.tag }}
+  cancel-in-progress: false
+env:
+  NYRA_CI_RELEASE_TAG: ${{ inputs.tag }}
+jobs:
+  prepare:
+    runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+    outputs:
+      original_run: ${{ steps.review.outputs.original_run }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - id: review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 -B scripts/review_continuation.py
+  resume:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: linux-x86_64
+            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
+          - host: windows-x86_64
+            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 240
+    concurrency:
+      group: native-build-${{ matrix.host }}
+      cancel-in-progress: false
+    env:
+      NYRA_CI_HOST: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: build-receipt-${{ matrix.host }}
+          path: continuation-input/receipt
+          run-id: ${{ needs.prepare.outputs.original_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: private-qualification-${{ matrix.host }}
+          path: continuation-input/evidence
+          run-id: ${{ needs.prepare.outputs.original_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Finish missing scopes and preserve original accepted products (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/resume_native.py
+      - name: Finish missing scopes and preserve original accepted products (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/resume_native.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: public-sdk-${{ matrix.host }}
+          path: public-output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: continued-qualification-${{ matrix.host }}
+          path: |
+            build-receipt.json
+            qualification-evidence/
+          retention-days: 30
+      - name: Release completed continuation scratch (Unix)
+        if: success() && runner.os != 'Windows'
+        shell: bash
+        run: python3 -B scripts/retain_assembly.py
+      - name: Release completed continuation scratch (Windows)
+        if: success() && runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/retain_assembly.py

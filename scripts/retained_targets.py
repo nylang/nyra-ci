@@ -168,8 +168,11 @@ if __name__ == '__main__':
         if not run_id.isdigit():
             raise ValueError('invalid native qualification run')
         native = Github(repository, os.environ['GITHUB_TOKEN']).api('/actions/runs/' + run_id)
+        workflow = config.get('native_workflow', '.github/workflows/sdk-build.yml')
+        if workflow not in ('.github/workflows/sdk-build.yml', '.github/workflows/native-continuation.yml'):
+            raise ValueError('unsupported native qualification workflow')
         if (native['path'], native['head_sha'], native['conclusion'], native['head_repository']['full_name']) != (
-                '.github/workflows/sdk-build.yml', config['native_control_commit'], 'success', repository):
+                workflow, config['native_control_commit'], 'success', repository):
             raise ValueError('native qualification workflow identity or completion mismatch')
         matrix = retained_matrix(config, run_id)
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:

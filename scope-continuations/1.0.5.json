@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "version": "1.0.5",
+  "release_source_commit": "a424e6ed97922776826097f13bdc5f93de6a2665",
+  "actual_product_build_source_commit": "15a6cd351c86e7c54b8eca5ae70bc06ca7e1f159",
+  "original_run": "41191200569",
+  "original_control_commit": "65107648f81af95fd20bae27d48263fe231f63c5",
+  "approval": "User approved platform-effective-input digest reuse on 2026-10-31; changed scopes must be completely rerun; actual build revisions and original failures remain intact.",
+  "hosts": {
+    "linux-x86_64": "93eb35be52a98459697817aeac0b600a737e3739cd1fab9df7669d663e311e7c",
+    "windows-x86_64": "109ebd8e444d6d5824a0944ecab1bedc6bd72fab703726b11ab45eae36a0c124"
+  }
+}

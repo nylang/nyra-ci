@@ -80,6 +80,7 @@ def sdk_source_matches(data, plan, host):
         raise ValueError("native source equivalence proof changed")
     proof = json.loads(path.read_text())
     frontend = proof.get("frontend_gate", {})
+    nyra = proof.get("nyra_gate", {})
     return (proof.get("kind") == "approved-platform-effective-input-reuse-v1"
             and proof.get("status") == "complete"
             and proof.get("host") == host
@@ -89,7 +90,11 @@ def sdk_source_matches(data, plan, host):
             and frontend.get("status") == "ok"
             and type(frontend.get("passed")) is int and frontend["passed"] > 0
             and frontend.get("ran") == frontend["passed"]
-            and all(frontend.get(key) == 0 for key in ("failed", "skipped", "exit_code")))
+            and all(frontend.get(key) == 0 for key in ("failed", "skipped", "exit_code"))
+            and nyra.get("status") == "ok"
+            and type(nyra.get("passed")) is int and nyra["passed"] > 0
+            and nyra.get("ran") == nyra["passed"]
+            and all(nyra.get(key) == 0 for key in ("failed", "skipped", "exit_code")))
 
 
 def check_sdk(data, plan, host):

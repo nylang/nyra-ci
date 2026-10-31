@@ -18,7 +18,7 @@ on:
         default: main
         required: true
       hosts:
-        description: Comma-separated native hosts; empty selects all four
+        description: Optional native/target host subset; empty selects all four
         type: string
         default: ''
         required: false
@@ -102,6 +102,7 @@ jobs:
     uses: ./.github/workflows/qualify-retained.yml
     with:
       tag: ${{ inputs.tag }}
+      hosts: ${{ inputs.hosts }}
   admission:
     if: inputs.phase == 'admit'
     uses: ./.github/workflows/admit-native.yml

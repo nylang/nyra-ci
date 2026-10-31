@@ -66,13 +66,21 @@ def produce():
     llvm = sdk / 'hosts' / host / 'llvm'
     config = settings()
     output = Path(build['workspace']) / 'runtimes'
-    output.mkdir()
+    output.mkdir(exist_ok='completed_profile_prefix' in build)
     lock = json.loads((sdk / 'share/nyra/source-package-lock.json').read_text())
     build_platform.SRC = snapshot / 'source/platform/src'
     build_platform.INCLUDE = snapshot / 'source/platform/include'
-    records = []
-    host_records = []
+    prefix=build.get('completed_profile_prefix', {})
+    records = list(prefix.get('targets', []))
+    host_records = list(prefix.get('host_compilation', []))
     for key in policy()['runtime_producers'][host]:
+        if key in {r['key'] for r in records}:
+            print('Retain complete target profile without rebuild/test: '+key,flush=True)
+            continue
+        if prefix:
+            from owned_cleanup import remove_tree
+            for path in (output/'targets'/key,output/'consumers'/key):
+                if path.exists():remove_tree(path)
         from tools.ci.runner_storage import check_space
         check_space(output)
         row = target(key, llvm, config)

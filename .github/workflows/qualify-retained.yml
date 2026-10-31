@@ -6,6 +6,11 @@ on:
         description: Frozen release plan with reviewed qualified-inputs pins
         type: string
         required: true
+      hosts:
+        description: Optional host subset; partial runs retain target outputs without assembly
+        type: string
+        required: false
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -23,6 +28,7 @@ jobs:
       - id: inputs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NYRA_CI_HOSTS: ${{ inputs.hosts }}
         run: python3 -B scripts/retained_targets.py --plan
   targets:
     needs: prepare
@@ -86,6 +92,7 @@ jobs:
         shell: cmd
         run: python -B scripts/retain_assembly.py
   assemble:
+    if: inputs.hosts == ''
     name: Assemble retained publication bundle
     needs: targets
     runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]

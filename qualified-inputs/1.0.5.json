@@ -1,5 +1,78 @@
 {
-  "source_commit": "238d12ceacb479a238a9d9a878e8e1a1fc549f6a",
+  "expected_native_inventory": {
+    "darwin-arm64": {
+      "compiler_units": {
+        "frontend": 471,
+        "json": 34,
+        "kernel": 85,
+        "nllvm": 11,
+        "ntest": 5,
+        "nyra": 96,
+        "package_core": 49,
+        "stdlib": 363,
+        "yaml": 84
+      },
+      "regression": 538,
+      "tool_units": {
+        "nyra": 16,
+        "nyra-analyzer": 30
+      }
+    },
+    "darwin-x86_64": {
+      "compiler_units": {
+        "frontend": 471,
+        "json": 34,
+        "kernel": 85,
+        "nllvm": 11,
+        "ntest": 5,
+        "nyra": 96,
+        "package_core": 49,
+        "stdlib": 363,
+        "yaml": 84
+      },
+      "regression": 538,
+      "tool_units": {
+        "nyra": 16,
+        "nyra-analyzer": 30
+      }
+    },
+    "linux-x86_64": {
+      "compiler_units": {
+        "frontend": 471,
+        "json": 34,
+        "kernel": 85,
+        "nllvm": 11,
+        "ntest": 5,
+        "nyra": 96,
+        "package_core": 49,
+        "stdlib": 363,
+        "yaml": 84
+      },
+      "regression": 538,
+      "tool_units": {
+        "nyra": 16,
+        "nyra-analyzer": 30
+      }
+    },
+    "windows-x86_64": {
+      "compiler_units": {
+        "frontend": 471,
+        "json": 34,
+        "kernel": 85,
+        "nllvm": 11,
+        "ntest": 5,
+        "nyra": 96,
+        "package_core": 49,
+        "stdlib": 362,
+        "yaml": 84
+      },
+      "regression": 538,
+      "tool_units": {
+        "nyra": 16,
+        "nyra-analyzer": 30
+      }
+    }
+  },
   "managed_imports": {
     "darwin-arm64": {
       "archive_sha256": "3ab9b0c03a6fc56af9c4db5386fae361987b099e365b4319f655dc12e106dc26",
@@ -22,89 +95,23 @@
       "sdk_manifest_sha256": "9c697e4014c36e1e10ed4add3427080c71b9e54b909a30e2d93d13cfb0abb8c0"
     }
   },
-  "expected_native_inventory": {
+  "native_control_commit": "e21ca63a286004af13a11f393b49b62cecf65805",
+  "native_qualification_run": 41227114543,
+  "native_qualification_workflow": ".github/workflows/sdk-build.yml",
+  "source_commit": "238d12ceacb479a238a9d9a878e8e1a1fc549f6a",
+  "target_continuations": {
     "darwin-arm64": {
-      "regression": 538,
-      "compiler_units": {
-        "kernel": 85,
-        "stdlib": 363,
-        "yaml": 84,
-        "json": 34,
-        "package_core": 49,
-        "frontend": 471,
-        "nyra": 96,
-        "nllvm": 11,
-        "ntest": 5
-      },
-      "tool_units": {
-        "nyra-analyzer": 30,
-        "nyra": 16
-      }
-    },
-    "darwin-x86_64": {
-      "regression": 538,
-      "compiler_units": {
-        "kernel": 85,
-        "stdlib": 363,
-        "yaml": 84,
-        "json": 34,
-        "package_core": 49,
-        "frontend": 471,
-        "nyra": 96,
-        "nllvm": 11,
-        "ntest": 5
-      },
-      "tool_units": {
-        "nyra-analyzer": 30,
-        "nyra": 16
-      }
-    },
-    "linux-x86_64": {
-      "regression": 538,
-      "compiler_units": {
-        "kernel": 85,
-        "stdlib": 363,
-        "yaml": 84,
-        "json": 34,
-        "package_core": 49,
-        "frontend": 471,
-        "nyra": 96,
-        "nllvm": 11,
-        "ntest": 5
-      },
-      "tool_units": {
-        "nyra-analyzer": 30,
-        "nyra": 16
-      }
-    },
-    "windows-x86_64": {
-      "regression": 538,
-      "compiler_units": {
-        "kernel": 85,
-        "stdlib": 362,
-        "yaml": 84,
-        "json": 34,
-        "package_core": 49,
-        "frontend": 471,
-        "nyra": 96,
-        "nllvm": 11,
-        "ntest": 5
-      },
-      "tool_units": {
-        "nyra-analyzer": 30,
-        "nyra": 16
-      }
+      "checkpoint_sha256": "ce33bcbd75bc4f382bf1c4e8f640906a4005d17228bea4764c882c20a84802c6",
+      "control_commit": "77d20c9ec51ea358a460bfc0dee97709fd5614c3",
+      "workspace": "41228338231-1-darwin-arm64"
     }
   },
-  "native_qualification_run": 41227114543,
-  "native_control_commit": "e21ca63a286004af13a11f393b49b62cecf65805",
-  "native_qualification_workflow": ".github/workflows/sdk-build.yml",
   "target_imports": {
     "darwin-x86_64": {
       "catalog_sha256": "6a74a5a3b2d393066e9a47b29e351f760741067578312357ce4da17ac33eaa9e",
       "control_commit": "04b8b4fb7b6b46a4a3e639725cbaadf6c37de291",
-      "qualification_run": 41227243738,
-      "qualification_attempt": 2
+      "qualification_attempt": 2,
+      "qualification_run": 41227243738
     }
   }
 }

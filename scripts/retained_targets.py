@@ -33,7 +33,7 @@ def verify_native(directory, host, plan, pin=None):
     return path, receipt
 
 
-def retained_matrix(config, run_id):
+def retained_matrix(config, run_id, selected=None):
     labels = {
         'darwin-arm64': ['self-hosted', 'macOS', 'ARM64', 'nyra-sdk', 'nyra-macos-arm64'],
         'darwin-x86_64': ['self-hosted', 'macOS', 'X64', 'nyra-sdk', 'nyra-macos-x86_64'],
@@ -42,8 +42,10 @@ def retained_matrix(config, run_id):
     managed = config.get('managed_imports', {})
     if set(managed) - set(HOSTS):
         raise ValueError('unknown managed native import host')
+    chosen = HOSTS if not selected else selected.split(',')
+    if len(chosen)!=len(set(chosen)) or set(chosen)-set(HOSTS):raise ValueError('invalid retained target host subset')
     return {'include': [dict(host=host, labels=labels[host],
-        native_run='' if host in managed else run_id) for host in HOSTS]}
+        native_run='' if host in managed else run_id) for host in HOSTS if host in chosen]}
 
 
 def stage_git_headers(sdk, bootstrap):
@@ -82,9 +84,15 @@ def produce():
     imported = catalog.get('managed_imports', {}).get(host)
     native = cache_root() / 'nyra-prequalified' / plan['version'] / host if imported else ROOT / 'native-input'
     archive, original = verify_native(native, host, plan, imported)
+    continuation = catalog.get('target_continuations', {}).get(host)
     work = cache_root() / 'nyra-release-work' / (
         os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT'] + '-' + host)
-    work.mkdir(parents=True, exist_ok=False)
+    if continuation:
+        work = cache_root() / 'nyra-release-work' / continuation['workspace']
+        from resume_targets import admit
+        prefix = admit(work, host, plan, continuation)
+    else:
+        work.mkdir(parents=True, exist_ok=False)
     state = dict(original, workspace=str(work), success=False,
                  native_qualification_origin='managed-local-import' if imported else 'github-actions',
                  native_qualification_run=None if imported else catalog['native_qualification_run'],
@@ -101,12 +109,14 @@ def produce():
         return
     try:
         source = work / 'source'
-        checkout(plan['source_commit'], source)
+        if not continuation:
+            checkout(plan['source_commit'], source)
         modules = subprocess.check_output(['git', 'config', '--file', '.gitmodules',
             '--get-regexp', r'submodule\..*\.path'], cwd=source, text=True)
         paths = [line.split(None, 1)[1] for line in modules.splitlines()
                  if line.split(None, 1)[1].startswith('third_party/')]
-        run(['git', 'submodule', 'update', '--init', '--recursive', '--', *paths], source)
+        if not continuation:
+            run(['git', 'submodule', 'update', '--init', '--recursive', '--', *paths], source)
         sys.path.insert(0, str(source))
         from tools.build.bootstrap_seed import _extract
         from tools.build.distribution import validate_public
@@ -114,8 +124,13 @@ def produce():
         from tools.ci.runner_storage import check_space
         check_space(work)
         extraction = work / 'native-sdk'
-        extraction.mkdir()
-        sdk = _extract(archive, extraction, 'zip' if host.startswith('windows-') else 'tar.gz')
+        if continuation:
+            candidates=list(extraction.iterdir())
+            if len(candidates)!=1:raise ValueError('ambiguous retained native extraction')
+            sdk=candidates[0]
+        else:
+            extraction.mkdir()
+            sdk = _extract(archive, extraction, 'zip' if host.startswith('windows-') else 'tar.gz')
         if sha(sdk / 'manifest.json') != original['sdk_manifest_sha256']:
             raise ValueError('retained SDK manifest changed')
         manifest = validate_public(sdk)
@@ -125,9 +140,13 @@ def produce():
         environment = verify_build_tools(host, sdk)
         os.environ.update(environment)
         bootstrap = work / 'bootstrap'
-        (bootstrap / 'native-generations').mkdir(parents=True)
-        create_snapshot(source, bootstrap / 'native-generations/snapshot', bootstrap / 'platform-libs', regression=False)
-        stage_git_headers(sdk, bootstrap)
+        if not continuation:
+            (bootstrap / 'native-generations').mkdir(parents=True)
+            create_snapshot(source, bootstrap / 'native-generations/snapshot', bootstrap / 'platform-libs', regression=False)
+            stage_git_headers(sdk, bootstrap)
+        else:
+            state['completed_profile_prefix']=prefix
+            state['target_continuation_origin']=continuation
         # runtime_targets requires a successfully admitted native SDK; that scope
         # is separate from completion of this job's new target runtime work.
         write(ROOT / 'build-receipt.json', dict(state, success=True))
@@ -180,7 +199,7 @@ if __name__ == '__main__':
         if (native['path'], native['head_sha'], native['conclusion'], native['head_repository']['full_name']) != (
                 workflow, config['native_control_commit'], 'success', repository):
             raise ValueError('native qualification workflow identity or completion mismatch')
-        matrix = retained_matrix(config, run_id)
+        matrix = retained_matrix(config, run_id, os.environ.get('NYRA_CI_HOSTS'))
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
             output.write('matrix=' + json.dumps(matrix) + '\n')
     else:

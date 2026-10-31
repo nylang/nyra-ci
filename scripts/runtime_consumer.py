@@ -48,6 +48,16 @@ def archive_link_flags(key, archives, platform):
 def accept(row, compiler, llvm, packages, out, source, config):
     out.mkdir(parents=True)
     if not row.hosted:
+        # The macOS SDK ships the same multicall LLD under its Mach-O name.
+        # Expose an owned ELF entry without changing or rebuilding SDK bytes.
+        if not (llvm / 'bin/ld.lld').is_file() and (llvm / 'bin/ld64.lld').is_file():
+            view = out / 'llvm-entries'
+            (view / 'bin').mkdir(parents=True)
+            os.link(llvm / 'bin/ld64.lld', view / 'bin/ld.lld')
+            (view / 'bin/clang').symlink_to(llvm / 'bin/clang')
+            for name in ('lib', 'include'):
+                (view / name).symlink_to(llvm / name, target_is_directory=True)
+            llvm = view
         if row.key != 'none-x86_64':
             command = [sys.executable, str(source / 'tests/tools/ntest_portable_acceptance.py'),
                        '--compiler', str(compiler), '--packages', str(packages), '--llvm', str(llvm),

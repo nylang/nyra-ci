@@ -87,6 +87,22 @@ def native_environment(sdk, host):
     if host == 'windows-x86_64':
         cmake = Path(os.environ.get('ProgramFiles(x86)', 'C:/Program Files (x86)')) / 'Microsoft Visual Studio/2022/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake'
         environment['PATH'] = os.pathsep.join([str(cmake / 'CMake/bin'), str(cmake / 'Ninja'), environment['PATH']])
+        kits = Path(os.environ.get('ProgramFiles(x86)', 'C:/Program Files (x86)')) / 'Windows Kits/10/bin'
+        resources = sorted(kits.glob('*/x64/rc.exe'), key=lambda p: tuple(int(x) for x in p.parent.parent.name.split('.')))
+        if not resources:
+            raise ValueError('missing installed Windows SDK resource compiler')
+        include = kits.parent / 'Include' / resources[-1].parent.parent.name
+        if not (include / 'um/winver.h').is_file() or not (include / 'shared/winapifamily.h').is_file():
+            raise ValueError('matching Windows SDK resource headers are missing')
+        visual = cmake.parents[4]
+        vc = visual / 'VC/Tools/MSVC' / (visual / 'VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt').read_text().strip()
+        if not (vc / 'include/vcruntime.h').is_file():
+            raise ValueError('configured MSVC development headers are missing')
+        environment['INCLUDE'] = os.pathsep.join([str(vc / 'include'), *[str(include / name) for name in ('um', 'shared', 'ucrt', 'winrt') if (include / name).is_dir()], environment.get('INCLUDE', '')]).rstrip(os.pathsep)
+        sdk_lib = kits.parent / 'Lib' / resources[-1].parent.parent.name
+        environment['LIB'] = os.pathsep.join([str(vc / 'lib/x64'), str(sdk_lib / 'um/x64'), str(sdk_lib / 'ucrt/x64'), environment.get('LIB', '')]).rstrip(os.pathsep)
+        environment['RC'] = str(resources[-1])
+        environment['PATH'] = str(resources[-1].parent) + os.pathsep + environment['PATH']
     if host.startswith(('darwin-', 'linux-')):
         environment['NYRA_REGRESSION_MIN_TIMEOUT'] = '1800' if host.startswith('linux-') else '600'
     return environment

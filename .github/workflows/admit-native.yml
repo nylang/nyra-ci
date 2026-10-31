@@ -1,0 +1,53 @@
+name: Admit exact native SDKs with complete existing gates
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Frozen release plan and reviewed native artifact pins
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: sdk-native-admission
+  cancel-in-progress: false
+env:
+  NYRA_CI_RELEASE_TAG: ${{ inputs.tag }}
+jobs:
+  admit:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: darwin-arm64
+            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
+          - host: darwin-x86_64
+            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
+          - host: linux-x86_64
+            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
+          - host: windows-x86_64
+            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+    runs-on: ${{ matrix.labels }}
+    timeout-minutes: 30
+    concurrency:
+      group: native-build-${{ startsWith(matrix.host, 'darwin-') && 'shared-mac' || matrix.host }}
+      cancel-in-progress: false
+    env:
+      NYRA_CI_HOST: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Verify accepted bytes and complete compiler/tool receipts (Unix)
+        if: runner.os != 'Windows'
+        run: python3 -B scripts/admit_native.py
+      - name: Verify accepted bytes and complete compiler/tool receipts (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: python -B scripts/admit_native.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: native-admission-${{ matrix.host }}
+          path: native-admission.json
+          if-no-files-found: error
+          retention-days: 30

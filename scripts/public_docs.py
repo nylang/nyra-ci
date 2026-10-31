@@ -28,7 +28,7 @@ def update(github, plan):
         file = 'nyra-runtime-' + version + '-' + group + '.tar.gz'
         text += '- [' + group + '](' + base + 'download/v' + version + '/' + file + '): ' + ', '.join(targets) + '\n'
     text += '\nDeclare runtime dependencies through packages/<name>/package.yaml; manifests select target leaves. CPU/ISA, ABI and object format must match. Freestanding kernel/ntest require consumer-owned providers.\n\n'
-    text += 'CI qualified G1/G2 identity and the complete G2 suites once, plus bootstrap-built tool units once. Publication preserves accepted bytes. Runtime execution/compile-only levels are recorded per target. macOS x86_64 currently uses Rosetta. Compile-only does not establish runtime execution or a linked host SDK.\n\n'
+    text += 'Native qualification covers G1/G2 identity and the complete G2 suites once, plus bootstrap-built tool units once. Publication preserves accepted bytes. Runtime execution/compile-only levels are recorded per target. macOS x86_64 currently uses Rosetta. Compile-only does not establish runtime execution or a linked host SDK.\n\n'
     text += '[Installation](INSTALL.md), [release notes](RELEASE-' + version + '.md), [acceptance](ACCEPTANCE-' + version + '.json), [license](LICENSE.txt).\n'
     installation = '# Install Nyra SDK ' + version + '\n\nDownload the archive matching your host from the release. Check its SHA-256 against SHA256SUMS, extract it, and add hosts/<host>/bin to PATH. Keep the full directory together so tools can resolve LLVM and packages.\n\nAdditional targets use the separate runtime archives listed in README.md. Their package roots are packages/kernel/package.yaml, packages/ntest/package.yaml and, for hosted targets, packages/stdlib/package.yaml. Preserve the archive layout when moving it. amd64 is x86_64; aarch64 is arm64.\n\nmacOS tools require macOS 14 or newer; Intel execution currently uses Rosetta qualification. Binaries are not Developer ID signed/notarized. Compile-only target evidence does not prove execution. Windows ARM64 consumer linking needs the matching MSVC static CRT.\n'
     acceptance = dict(version=version, source_commit=plan['source_commit'], validation_policy='g1-g2-v1',
@@ -36,7 +36,7 @@ def update(github, plan):
                       compile_only_targets=sorted(set(policy()['targets']) - set(policy()['execution_required'])),
                       complete_suites_repeated_at_publication=False)
     documents = {'README.md': text, 'INSTALL.md': installation,
-                 'RELEASE-' + version + '.md': '# Nyra SDK ' + version + '\n\n' + plan['notes'] + '\n\n' + text[text.index('CI qualified'):],
+                 'RELEASE-' + version + '.md': '# Nyra SDK ' + version + '\n\n' + plan['notes'] + '\n\n' + text[text.index('Native qualification'):],
                  'ACCEPTANCE-' + version + '.json': json.dumps(acceptance, indent=2) + '\n'}
     tree = []
     for name, content in documents.items():

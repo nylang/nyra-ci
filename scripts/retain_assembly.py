@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 from build_sdk import cache_root
+from owned_cleanup import remove_tree
 from release_common import ROOT, state_path, write
 
 host = os.environ['NYRA_CI_HOST']
@@ -31,9 +32,9 @@ if host == 'darwin-arm64' and release_state.is_file():
     write(state_path(host), state)
 # Raw private receipts were uploaded before this step. Published product bytes
 # are held by CI artifacts, not reconstructed from this compact retained tree.
-shutil.rmtree(work)
+remove_tree(work)
 if exported is not None:
-    shutil.rmtree(exported)
+    remove_tree(exported)
 if release_state.is_file():
     state['build_scratch_removed_after_upload'] = True
     write(release_state, state)

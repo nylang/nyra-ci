@@ -38,7 +38,9 @@ def validate_original(report, regression, config, host, compiler, platform):
     if (regression.get('compiler_sha256') != config['hosts'][host]
             or regression.get('total') != 536 or regression.get('passed') != 536
             or regression.get('failed') != 0 or len(regression.get('cases', [])) != 536
-            or any(row.get('ok') is not True for row in regression['cases'])):
+            or any(row.get('ok') is not True for row in regression['cases'])
+            or len({row.get('rel') for row in regression['cases']}) != 536
+            or any(not isinstance(row.get('rel'), str) or not row['rel'] for row in regression['cases'])):
         raise ValueError('original complete regression gate did not pass')
 
 

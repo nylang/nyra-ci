@@ -25,7 +25,7 @@ class NativeContinuationTests(unittest.TestCase):
                            G1_sha256=sha(self.compiler), G2_sha256=sha(self.compiler)),
                            native_inputs=dict(platform_sha256=sha(self.platform)))
         self.regression = dict(compiler_sha256=sha(self.compiler), total=536, passed=536,
-                               failed=0, cases=[dict(ok=True) for _ in range(536)])
+                               failed=0, cases=[dict(ok=True, rel='case/' + str(index)) for index in range(536)])
 
     def validate(self):
         validate_original(self.report, self.regression, self.config, self.host, self.compiler, self.platform)
@@ -46,6 +46,11 @@ class NativeContinuationTests(unittest.TestCase):
             self.validate()
         self.regression = saved
         self.regression['cases'][0]['ok'] = False
+        with self.assertRaisesRegex(ValueError, 'complete regression gate'):
+            self.validate()
+
+    def test_duplicate_cases_cannot_replace_the_complete_inventory(self):
+        self.regression['cases'][0]['rel'] = self.regression['cases'][1]['rel']
         with self.assertRaisesRegex(ValueError, 'complete regression gate'):
             self.validate()
 

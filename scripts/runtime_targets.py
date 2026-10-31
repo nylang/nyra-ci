@@ -70,6 +70,8 @@ def produce():
     records = []
     host_records = []
     for key in policy()['runtime_producers'][host]:
+        from tools.ci.runner_storage import check_space
+        check_space(output)
         row = target(key, llvm, config)
         packages = ('kernel', 'ntest', 'stdlib') if row.hosted else ('kernel', 'ntest')
         dest = output / 'targets' / key
@@ -103,6 +105,12 @@ def produce():
             host_records.append(compile_host(row, compiler, llvm, snapshot, Path(build['workspace']) / 'bootstrap', output / 'host-objects' / key))
         records.append(dict(key=key, triple=row.triple, abi=row.abi, hosted=row.hosted,
                             packages=list(packages), **evidence))
+        # Successful consumer compilation/link/run has no remaining object or
+        # Core dump consumer. Preserve its bounded receipts and source inputs.
+        consumer = output / 'consumers' / key
+        for path in consumer.rglob('*'):
+            if path.is_file() and path.suffix in ('.o', '.obj', '.ast', '.ll', '.bc'):
+                path.unlink()
     write(output / 'catalog.json', dict(host=host, version=build['version'], source_commit=build['source_commit'],
           control_commit=os.environ['GITHUB_SHA'], targets=records, host_compilation=host_records,
           files={p.relative_to(output).as_posix(): sha(p) for p in (output / 'targets').rglob('*') if p.is_file()}))

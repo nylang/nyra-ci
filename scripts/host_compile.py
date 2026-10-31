@@ -10,6 +10,8 @@ def compile_host(row, compiler, llvm, snapshot, bootstrap, out):
     out.mkdir(parents=True, exist_ok=True)
     records = []
     for name, package in (('nyrac', 'nyra'), ('nyra-analyzer', 'analyzer'), ('nyra', 'package_manager')):
+        from tools.ci.runner_storage import check_space
+        check_space(out)
         dest = out / name
         manifest = dest / 'objects.list'
         run([compiler, *row.nyra_flags(), 'build', snapshot / 'source' / package / 'main.ny',
@@ -22,6 +24,13 @@ def compile_host(row, compiler, llvm, snapshot, bootstrap, out):
         for obj in paths:
             validate_object(obj, row.arch, 'windows' if row.key.startswith('windows') else 'linux', abi=row.abi)
         records.append(dict(name=name, object_units=len(paths), objects={p.relative_to(dest).as_posix(): sha(p) for p in paths}))
+        # The archive/catalog retains compile-only evidence; no later stage
+        # links these host worksets without matching native providers.
+        for path in sorted(dest.rglob('*'), reverse=True):
+            if path.is_file() and path.suffix not in ('.o', '.obj'):
+                path.unlink()
+            elif path.is_dir() and not any(path.iterdir()):
+                path.rmdir()
     from tools.dev.paths import source_package_path
     bridges = [('nllvm', source_package_path(snapshot, 'nllvm') / 'private/nyra_llvm_initialize_all.c'),
                ('ngit', source_package_path(snapshot, 'ngit') / 'private/native/git_bridge.c')]

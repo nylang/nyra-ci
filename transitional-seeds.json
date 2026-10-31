@@ -5,7 +5,7 @@
   ],
   "compilers": {
     "1.0.5": {
-      "source_commit": "7363fad76ad03ccb3a2841d98c382ca32880eb87",
+      "source_commit": "fa29423b572fbce2812ba5411bd2907a5c2ad111",
       "hosts": {
         "darwin-x86_64": {
           "sha256": "8229f852ff6c6afee063adca20c5fefbb08761cc96026c37e8ef842bd41d39d5",
@@ -26,12 +26,13 @@
           }
         },
         "windows-x86_64": {
-          "sha256": "2b76b516b752c18fbcbd832779d4806dbb3d36a827e8217c77f6f21715acf0fd",
+          "sha256": "c09d5e21f2d4b579215439eb3a89e76387b8e0412ae25d81e4cdbb9809256ee6",
           "provenance": {
-            "mode": "cross-object/native-link G0 only",
-            "source_commit": "14a269a7c80e5f37110b15940f2cea6e75e3bcfd",
-            "object_units": 324,
-            "record_sha256": "40b0196fc3c3e504106eb2b719d420a6eed99310c224cf791d2a3c5c1c05b98d"
+            "mode": "Native CompilerLink ObjectUnit replacement; explicit hybrid G0 only",
+            "base_source_commit": "7363fad76ad03ccb3a2841d98c382ca32880eb87",
+            "overlay_source_commit": "7aab93809c868dfa35e62ba0f2edf38979b5a248",
+            "record_sha256": "53c1dffc724b0da71d0803a0d3eede9e63b7a75fa6259c501ff6e337c65cfe47",
+            "native_old_fail_new_pass": true
           }
         },
         "darwin-arm64": {

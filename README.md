@@ -147,3 +147,16 @@ qualification receipt. No language source, active bootstrap pointer or released
 archive is overwritten. The normal frozen-source G1/G2 and complete suites still
 qualify each final native product. Retire transition inputs after bootstrap
 adoption and the last active consumer; retain bounded identities separately.
+
+### Reusing accepted native products
+
+`Qualify private native SDK candidates` has two explicit phases. `native`
+qualifies the selected host subset from one resolved source commit. `targets`
+requires a reviewed release plan and `qualified-inputs/<version>.json`; it
+imports exact accepted archives and native receipts, builds remaining runtime
+profiles/compile-only tool worksets, and assembles a sealed bundle. It does not
+rebuild accepted desktop tools or repeat their complete suites. Each imported
+archive, public SDK manifest and local receipt has a reviewed digest, and the
+original successful native CI run/control commit is authenticated before use.
+The retained-target phase uploads `qualified-release` without publishing it.
+Publication remains a separate authorized operation on that sealed bundle.

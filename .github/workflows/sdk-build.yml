@@ -2,6 +2,16 @@ name: Qualify private native SDK candidates
 on:
   workflow_dispatch:
     inputs:
+      phase:
+        description: Native qualification, or target work reusing accepted native archives
+        type: choice
+        options: [native, targets]
+        default: native
+        required: true
+      tag:
+        description: Reviewed release plan required by the targets phase
+        type: string
+        required: false
       source_ref:
         description: Trusted private source branch, tag, or commit (resolved once)
         type: string
@@ -14,11 +24,13 @@ on:
         required: false
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: sdk-source-build
   cancel-in-progress: false
 jobs:
   prepare:
+    if: inputs.phase != 'targets'
     runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
     outputs:
       source_commit: ${{ steps.source.outputs.source_commit }}
@@ -33,6 +45,7 @@ jobs:
           NYRA_CI_HOSTS: ${{ inputs.hosts }}
         run: python3 -B scripts/prepare_source.py
   build:
+    if: inputs.phase != 'targets'
     needs: prepare
     strategy:
       fail-fast: false
@@ -84,3 +97,8 @@ jobs:
         if: success() && runner.os == 'Windows'
         shell: cmd
         run: python -B scripts/retain_assembly.py
+  targets:
+    if: inputs.phase == 'targets'
+    uses: ./.github/workflows/qualify-retained.yml
+    with:
+      tag: ${{ inputs.tag }}

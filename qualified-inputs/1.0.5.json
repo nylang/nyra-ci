@@ -95,5 +95,8 @@
         "nyra": 16
       }
     }
-  }
+  },
+  "native_qualification_run": 41227114543,
+  "native_control_commit": "e21ca63a286004af13a11f393b49b62cecf65805",
+  "native_qualification_workflow": ".github/workflows/sdk-build.yml"
 }

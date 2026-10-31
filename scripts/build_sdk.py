@@ -82,6 +82,13 @@ def native_environment(sdk, host):
         raise ValueError('missing managed static OpenSSL provider: ' + str(provider))
     environment.update(LLVM_PREFIX=str(llvm), NYRA_GIT_OPENSSL_PREFIX=str(provider),
                        PATH=str(llvm / 'bin') + os.pathsep + environment.get('PATH', ''))
+    native_provider = cache_root() / 'nyra-providers/ngit-0.2.0-libgit2-1.9.7'
+    native_metadata = native_provider / 'provider.json'
+    if native_metadata.is_file():
+        metadata = json.loads(native_metadata.read_text())
+        if metadata.get('format') == 'nyra-ngit-native-provider-v1':
+            # Bootstrap validates every input before beginning its generations.
+            environment['NYRA_GIT_NATIVE_PROVIDER'] = str(native_provider)
     if host.startswith('darwin-'):
         environment['MACOSX_DEPLOYMENT_TARGET'] = '14.0'
     if host == 'windows-x86_64':
@@ -158,7 +165,18 @@ def build():
         manifest = validate_sdk(candidate)
         from release_common import check_sdk
         check_sdk(manifest, {'version': manifest['version'], 'source_commit': commit}, host)
-        public = export_public(candidate, work / 'public-release', candidate=False, plan_only=False)
+        export_directory = work / 'public-release'
+        if host.startswith('windows-'):
+            # Encoded module contract filenames can approach MAX_PATH when a
+            # staging name and SDK archive stem are nested under the job root.
+            export_root = cache_root() / 'nyra-release-export'
+            export_root.mkdir(parents=True, exist_ok=True)
+            write(export_root / 'owner.json', dict(owner='Native SDK public export staging',
+                reserve_bytes=80 * 1024**3, expected_peak_bytes=3 * 1024**3,
+                cleanup='retain_assembly removes the completed run export after artifact upload'))
+            export_directory = export_root / (os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT'])
+            receipt['public_export_workspace'] = str(export_directory)
+        public = export_public(candidate, export_directory, candidate=False, plan_only=False)
         archive = Path(public['archive'])
         output = ROOT / 'public-output'
         shutil.rmtree(output, ignore_errors=True)

@@ -20,6 +20,14 @@ class WindowsResources(unittest.TestCase):
  def test_numeric_sdk_order_and_complete_native_header_environment(self):
   self.sdk('10.0.9.0');rc,includes=self.sdk('10.0.10.0');env=native_environment(self.root/'sdk','windows-x86_64')
   self.assertEqual(env['RC'],str(rc));self.assertEqual(env['PATH'].split(os.pathsep)[0],str(rc.parent));self.assertIn(str(self.vc/'include'),env['INCLUDE'].split(os.pathsep));self.assertIn(str(includes/'um'),env['INCLUDE'].split(os.pathsep));self.assertIn(str(includes/'shared'),env['INCLUDE'].split(os.pathsep));self.assertIn(str(self.vc/'lib/x64'),env['LIB'].split(os.pathsep))
+ def test_only_versioned_managed_backend_is_forwarded(self):
+  import json
+  self.sdk('10.0.10.0')
+  backend=self.cache/'nyra-providers/ngit-0.2.0-libgit2-1.9.7';backend.mkdir()
+  for format in ('legacy', 'nyra-ngit-native-provider-v1'):
+   (backend/'provider.json').write_text(json.dumps({'format':format}))
+   env=native_environment(self.root/'sdk','windows-x86_64')
+   self.assertEqual(env.get('NYRA_GIT_NATIVE_PROVIDER'),str(backend) if format.endswith('-v1') else None)
  def test_missing_rc_fails_before_qualification(self):
   with self.assertRaisesRegex(ValueError,'resource compiler'):native_environment(self.root/'sdk','windows-x86_64')
  def test_missing_paired_resource_headers_fails_before_qualification(self):

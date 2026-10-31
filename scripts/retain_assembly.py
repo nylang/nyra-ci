@@ -13,6 +13,13 @@ work = Path(state['workspace']).resolve()
 allowed = (cache_root() / 'nyra-release-work').resolve()
 if work.parent != allowed or not state['success']:
     raise ValueError('refusing cleanup of work outside the completed CI build')
+exported = None
+if state.get('public_export_workspace'):
+    exported = Path(state['public_export_workspace']).resolve()
+    export_root = (cache_root() / 'nyra-release-export').resolve()
+    expected = os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT']
+    if exported.parent != export_root or exported.name != expected:
+        raise ValueError('refusing cleanup outside the completed public export')
 retained = cache_root() / 'nyra-release-assembly' / os.environ['GITHUB_RUN_ID'] / host
 retained.mkdir(parents=True, exist_ok=True)
 if host == 'darwin-arm64' and release_state.is_file():
@@ -25,6 +32,8 @@ if host == 'darwin-arm64' and release_state.is_file():
 # Raw private receipts were uploaded before this step. Published product bytes
 # are held by CI artifacts, not reconstructed from this compact retained tree.
 shutil.rmtree(work)
+if exported is not None:
+    shutil.rmtree(exported)
 if release_state.is_file():
     state['build_scratch_removed_after_upload'] = True
     write(release_state, state)

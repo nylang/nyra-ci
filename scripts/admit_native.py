@@ -94,7 +94,7 @@ def main():
     if sha(sdk / 'manifest.json') != pin['sdk_manifest_sha256']:
         raise ValueError('managed SDK differs from pinned public manifest')
     result = verify_complete(sdk, json.loads((sdk / 'manifest.json').read_text()),
-                             plan, host, config['expected_native_inventory'])
+                             plan, host, config['expected_native_inventory'][host])
     result.update(status='admitted-existing-complete-gates', host=host, source_commit=plan['source_commit'],
         native_receipt_sha256=pin['receipt_sha256'], archive_sha256=pin['archive_sha256'],
         sdk_manifest_sha256=pin['sdk_manifest_sha256'], source_qualification_origin=receipt,

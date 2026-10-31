@@ -15,7 +15,7 @@ def compile_host(row, compiler, llvm, snapshot, bootstrap, out):
         dest = out / name
         manifest = dest / 'objects.list'
         run([compiler, *row.nyra_flags(), 'build', snapshot / 'source' / package / 'main.ny',
-             '-O2', '--jobs', '2', '--out-dir', dest, '--object-manifest', manifest], snapshot,
+             '-O2', '--jobs', '1', '--out-dir', dest, '--object-manifest', manifest], snapshot,
             os.environ | {'AR': row.ar})
         paths = [Path(p) for p in manifest.read_text().splitlines()]
         if not paths or not all(p.is_file() and p.stat().st_size > 0 for p in paths):

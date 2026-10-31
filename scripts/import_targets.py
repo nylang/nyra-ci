@@ -27,8 +27,15 @@ def verify_catalog(directory, host, plan, pin):
     for row in rows:
         if row.get('status') != 'passed' or row['acceptance_level'] != policy()['execution_required'].get(row['key'], 'compile-only'):
             raise ValueError('incomplete target gate cannot be reused')
-    if value.get('host_compilation'):
-        raise ValueError('host object worksets require their own retained import policy')
+    expected=set(policy()['compile_only_hosts'].get(host, []))
+    worksets=value.get('host_compilation', [])
+    if len(worksets)!=len(expected) or {r['key'] for r in worksets}!=expected:
+        raise ValueError('retained compile-only host inventory differs')
+    for row in worksets:
+        if row['acceptance_level']!='compile-only' or row['executable_package_ready'] or {r['name'] for r in row['tools']}!={'nyrac','nyra-analyzer','nyra'} or len(row['bridges'])!=2:
+            raise ValueError('retained host compile-only receipt incomplete')
+        if any(r['object_units']<=0 or len(r['objects'])!=r['object_units'] for r in row['tools']):
+            raise ValueError('empty retained host object evidence')
     return value
 
 

@@ -101,7 +101,7 @@
   "source_commit": "238d12ceacb479a238a9d9a878e8e1a1fc549f6a",
   "target_continuations": {
     "windows-x86_64": {
-      "checkpoint_sha256": "468e14ac4ef637eb0f87fffce9eaeadea9591c077f7221fa385a772168ba1130",
+      "checkpoint_sha256": "e5a284075fa69a4daed69c0cc45b5c5028acdd8713f35c66485379688ed7e284",
       "control_commit": "77d20c9ec51ea358a460bfc0dee97709fd5614c3",
       "workspace": "41228338231-1-windows-x86_64"
     }

@@ -16,6 +16,32 @@ def missing(code=404):
 
 
 class ReleaseRecoveryTests(unittest.TestCase):
+    def test_read_inventory_bypasses_stale_intermediary_cache(self):
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = b'[]'
+        with patch('publish_release.urllib.request.urlopen', return_value=response) as opened:
+            github = Github('nylang/sdk', 'never-log-this-token')
+            github.api('/releases/12/assets?per_page=100')
+            github.api('/releases/12/assets?per_page=100')
+        first, second = [call.args[0] for call in opened.call_args_list]
+        self.assertIn('/assets?per_page=100&_nyra_read=', first.full_url)
+        self.assertNotEqual(first.full_url, second.full_url)
+        self.assertEqual(first.get_header('Cache-control'), 'no-cache')
+
+    def test_write_endpoint_and_payload_are_preserved(self):
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = b'{"draft":false}'
+        with patch('publish_release.urllib.request.urlopen', return_value=response) as opened:
+            Github('nylang/sdk', 'never-log-this-token').api('/releases/12', {'draft': False}, method='PATCH')
+        request = opened.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://api.github.com/repos/nylang/sdk/releases/12')
+        self.assertEqual(request.get_method(), 'PATCH')
+        self.assertEqual(json.loads(request.data), {'draft': False})
+
     def test_existing_draft_is_found_after_by_tag_returns_404(self):
         draft = {"id": 12, "tag_name": "v1.0.2", "draft": True}
         github = Mock()

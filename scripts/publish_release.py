@@ -12,6 +12,7 @@ import tarfile
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 import zipfile
 from release_common import spec, policy, check_sdk, sha, safe_name, write
 from public_policy import _payload_allowed
@@ -117,10 +118,15 @@ class Github:
         self.token = token
 
     def api(self, suffix, payload=None, method=None):
+        # Release state changes during uploads. Bypass intermediary caches so a
+        # stale empty/starter inventory cannot cause redundant uploads/deletion.
+        if payload is None and method in (None, 'GET'):
+            suffix += ('&' if '?' in suffix else '?') + '_nyra_read=' + uuid.uuid4().hex
         request = urllib.request.Request('https://api.github.com/repos/' + self.repository + suffix,
             data=json.dumps(payload).encode() if payload is not None else None, method=method,
             headers={'Authorization': 'Bearer ' + self.token, 'Accept': 'application/vnd.github+json',
-                     'Content-Type': 'application/json', 'User-Agent': 'Nyra-SDK-release'})
+                     'Content-Type': 'application/json', 'User-Agent': 'Nyra-SDK-release',
+                     'Cache-Control': 'no-cache'})
         try:
             with urllib.request.urlopen(request, timeout=60) as response:
                 data = response.read()

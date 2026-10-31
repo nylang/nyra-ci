@@ -1,5 +1,10 @@
 name: Admit exact native SDKs with complete existing gates
 on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       tag:

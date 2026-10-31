@@ -5,7 +5,7 @@ on:
       phase:
         description: Native qualification, or target work reusing accepted native archives
         type: choice
-        options: [native, targets]
+        options: [native, targets, admit]
         default: native
         required: true
       tag:
@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   prepare:
-    if: inputs.phase != 'targets'
+    if: inputs.phase == 'native'
     runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
     outputs:
       source_commit: ${{ steps.source.outputs.source_commit }}
@@ -45,7 +45,7 @@ jobs:
           NYRA_CI_HOSTS: ${{ inputs.hosts }}
         run: python3 -B scripts/prepare_source.py
   build:
-    if: inputs.phase != 'targets'
+    if: inputs.phase == 'native'
     needs: prepare
     strategy:
       fail-fast: false
@@ -100,5 +100,10 @@ jobs:
   targets:
     if: inputs.phase == 'targets'
     uses: ./.github/workflows/qualify-retained.yml
+    with:
+      tag: ${{ inputs.tag }}
+  admission:
+    if: inputs.phase == 'admit'
+    uses: ./.github/workflows/admit-native.yml
     with:
       tag: ${{ inputs.tag }}

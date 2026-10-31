@@ -95,6 +95,7 @@ jobs:
         shell: cmd
         run: python -B scripts/retain_assembly.py
   assemble:
+    name: Assemble retained publication bundle
     needs: targets
     runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
     timeout-minutes: 90

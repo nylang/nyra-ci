@@ -22,10 +22,15 @@ func main() -> int32 {
 }
 '''
 COUNTER = '''#include <stdint.h>
+#include <stdio.h>
 static int32_t count;
 int32_t FailCount(void) {return count;}
 void ClearFailCount(void) {count=0;}
 void AddFail(int32_t n) {count+=n;}
+void __nyra_ntest_write(const unsigned char *data, uintptr_t length) {
+  if (length) fwrite(data, 1, length, stdout);
+  fputc('\\n', stdout);
+}
 '''
 
 

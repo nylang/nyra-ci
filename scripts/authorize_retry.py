@@ -12,26 +12,44 @@ def get(path):
         return json.load(response)
 
 
-run = os.environ['NYRA_CI_QUALIFICATION_RUN']
-if not re.fullmatch(r'[1-9][0-9]*', run):
-    raise ValueError('qualification run ID must be numeric')
-identity = get('/actions/runs/' + run)
-if identity['path'] != '.github/workflows/release-sdk.yml' or identity['event'] not in ('push', 'workflow_dispatch') or identity['head_repository']['full_name'] != os.environ['GITHUB_REPOSITORY']:
-    raise ValueError('original run is not a trusted release qualification workflow')
-jobs = []
-page = 1
-while True:
-    batch = get('/actions/runs/' + run + '/jobs?filter=latest&per_page=100&page=' + str(page))['jobs']
-    jobs += batch
-    if len(batch) < 100:
-        break
-    page += 1
-if not any(j['name'] == 'Assemble sealed publication bundle' and j['conclusion'] == 'success' for j in jobs):
-    raise ValueError('original run has no successful publication bundle assembly')
-artifacts = get('/actions/runs/' + run + '/artifacts?per_page=100')['artifacts']
-matching = [a for a in artifacts if a['name'] == 'qualified-release' and not a['expired']]
-if len(matching) != 1:
-    raise ValueError('qualified bundle missing/expired; inspect original qualification run')
-with open(os.environ['GITHUB_ENV'], 'a') as output:
-    output.write('NYRA_CI_QUALIFICATION_SHA=' + identity['head_sha'] + '\n')
-print('Authorized retained bundle from qualification run ' + run)
+def authorize(identity, jobs, artifacts, repository):
+    workflow = identity.get('path')
+    names = {
+        '.github/workflows/release-sdk.yml': {'Assemble sealed publication bundle'},
+        '.github/workflows/sdk-build.yml': {'targets / Assemble retained publication bundle'},
+    }
+    events = ('workflow_dispatch',) if workflow == '.github/workflows/sdk-build.yml' else ('push', 'workflow_dispatch')
+    if (workflow not in names or identity.get('event') not in events or
+            identity.get('head_repository', {}).get('full_name') != repository or
+            not re.fullmatch(r'[0-9a-f]{40}', identity.get('head_sha', ''))):
+        raise ValueError('original run is not a trusted release qualification workflow')
+    if not any(j.get('name') in names[workflow] and j.get('conclusion') == 'success' for j in jobs):
+        raise ValueError('original run has no successful publication bundle assembly')
+    matching = [a for a in artifacts if a.get('name') == 'qualified-release' and a.get('expired') is False]
+    if len(matching) != 1:
+        raise ValueError('qualified bundle missing/expired; inspect original qualification run')
+    return identity['head_sha']
+
+
+def main():
+    run = os.environ['NYRA_CI_QUALIFICATION_RUN']
+    if not re.fullmatch(r'[1-9][0-9]*', run):
+        raise ValueError('qualification run ID must be numeric')
+    identity = get('/actions/runs/' + run)
+    jobs = []
+    page = 1
+    while True:
+        batch = get('/actions/runs/' + run + '/jobs?filter=latest&per_page=100&page=' + str(page))['jobs']
+        jobs += batch
+        if len(batch) < 100:
+            break
+        page += 1
+    artifacts = get('/actions/runs/' + run + '/artifacts?per_page=100')['artifacts']
+    sha = authorize(identity, jobs, artifacts, os.environ['GITHUB_REPOSITORY'])
+    with open(os.environ['GITHUB_ENV'], 'a') as output:
+        output.write('NYRA_CI_QUALIFICATION_SHA=' + sha + '\n')
+    print('Authorized retained bundle from qualification run ' + run)
+
+
+if __name__ == '__main__':
+    main()

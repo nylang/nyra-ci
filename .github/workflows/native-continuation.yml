@@ -1,5 +1,11 @@
 name: Continue approved native qualification scopes
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Reviewed scope-continuations version
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       tag:

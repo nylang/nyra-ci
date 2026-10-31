@@ -20,7 +20,10 @@ def target(key, llvm, config):
     class ConfiguredTarget(Target):
         includes: tuple = ()
         def c_flags(self):
-            return super().c_flags() + [x for p in self.includes for x in ('-I', p)]
+            flags = super().c_flags()
+            if self.key.startswith('windows-'):
+                flags = [flag for flag in flags if flag != '-fPIC']
+            return flags + [x for p in self.includes for x in ('-I', p)]
     options = config.get('targets', {}).get(key, {})
     if key.startswith('android-'):
         return resolve_target(key, ndk=Path(config['ndk']), api=policy()['android_api'])

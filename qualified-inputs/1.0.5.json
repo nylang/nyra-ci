@@ -98,5 +98,13 @@
   },
   "native_qualification_run": 41227114543,
   "native_control_commit": "e21ca63a286004af13a11f393b49b62cecf65805",
-  "native_qualification_workflow": ".github/workflows/sdk-build.yml"
+  "native_qualification_workflow": ".github/workflows/sdk-build.yml",
+  "target_imports": {
+    "darwin-x86_64": {
+      "catalog_sha256": "6a74a5a3b2d393066e9a47b29e351f760741067578312357ce4da17ac33eaa9e",
+      "control_commit": "04b8b4fb7b6b46a4a3e639725cbaadf6c37de291",
+      "qualification_run": 41227243738,
+      "qualification_attempt": 2
+    }
+  }
 }

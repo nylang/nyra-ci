@@ -93,6 +93,12 @@ def produce():
     write(work / 'owner.json', dict(owner='retained ' + plan['version'] + ' target qualification',
           reserve_bytes=80 * 1024**3, expected_peak_bytes=12 * 1024**3,
           cleanup='retain_assembly after artifact upload; bounded failed diagnostics'))
+    completed = catalog.get('target_imports', {}).get(host)
+    if completed:
+        from import_targets import stage
+        stage(cache_root() / 'nyra-prequalified-targets' / plan['version'] / host,
+              host, plan, completed, work, state, archive, native / ('release-' + host + '.json'))
+        return
     try:
         source = work / 'source'
         checkout(plan['source_commit'], source)

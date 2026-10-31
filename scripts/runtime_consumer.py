@@ -34,6 +34,17 @@ void __nyra_ntest_write(const unsigned char *data, uintptr_t length) {
 '''
 
 
+def split_link_inputs(inputs):
+    archives = [path for path in inputs if Path(path).suffix.lower() in ('.a', '.lib')]
+    objects = [path for path in inputs if Path(path).suffix.lower() not in ('.a', '.lib')]
+    return objects, archives
+
+
+def archive_link_flags(key, archives, platform):
+    libraries = [*archives, str(platform)]
+    return ['-Wl,--start-group', *libraries, '-Wl,--end-group'] if key.startswith(('linux-', 'android-')) else libraries
+
+
 def accept(row, compiler, llvm, packages, out, source, config):
     out.mkdir(parents=True)
     if not row.hosted:
@@ -58,26 +69,28 @@ def accept(row, compiler, llvm, packages, out, source, config):
     manifest = out / 'objects.list'
     run([str(compiler), *row.nyra_flags(), 'build', str(out / 'main.ny'), '-O2',
          '--out-dir', str(out / 'objects'), '--object-manifest', str(manifest)])
-    objects = manifest.read_text().splitlines()
+    inputs = manifest.read_text().splitlines()
+    objects, archives = split_link_inputs(inputs)
+    libraries = archive_link_flags(row.key, archives, packages / 'stdlib/lib/libnyra_platform.a')
     counter = out / 'counter.o'
     run([row.cc, *row.c_flags(), '-c', str(out / 'counter.c'), '-o', str(counter)])
     platform = packages / 'stdlib/lib/libnyra_platform.a'
     exe = out / ('consumer.exe' if row.key.startswith('windows') else 'consumer')
     options = config.get('targets', {}).get(row.key, {})
     if row.key.startswith('windows'):
-        libraries = options.get('library_dirs', [])
-        if row.arch == 'arm64' and not any((Path(p) / 'libcmt.lib').is_file() for p in libraries):
+        library_dirs = options.get('library_dirs', [])
+        if row.arch == 'arm64' and not any((Path(p) / 'libcmt.lib').is_file() for p in library_dirs):
             return dict(status='passed', acceptance_level='compile-only', consumer_executable_linked=False,
                         limitation='MSVC ARM64 static CRT unavailable; target packages, consumer objects and platform archive compiled.')
-        command = [row.cc, *row.c_flags(), '-fuse-ld=lld', str(counter), *objects, str(platform),
-                   *['-Wl,/libpath:' + p for p in libraries], '-o', str(exe)]
+        command = [row.cc, *row.c_flags(), '-fuse-ld=lld', str(counter), *objects, *libraries,
+                   *['-Wl,/libpath:' + p for p in library_dirs], '-o', str(exe)]
     elif row.key.startswith(('ios-', 'darwin-')):
         command = ['/usr/bin/clang', '--target=' + row.triple, '-isysroot', row.sysroot,
-                   str(counter), *objects, str(platform), '-o', str(exe)]
+                   str(counter), *objects, *libraries, '-o', str(exe)]
     elif row.key.startswith('android-'):
-        command = [row.cc, *row.c_flags(), str(counter), *objects, str(platform), *row.runtime_link_flags(), '-o', str(exe)]
+        command = [row.cc, *row.c_flags(), str(counter), *objects, *libraries, *row.runtime_link_flags(), '-o', str(exe)]
     elif row.key == 'linux-x86_64':
-        command = [row.cc, str(counter), *objects, str(platform), '-pthread', '-ldl', '-lm', '-o', str(exe)]
+        command = [row.cc, str(counter), *objects, *libraries, '-pthread', '-ldl', '-lm', '-o', str(exe)]
     else:
         root = Path(row.sysroot)
         lib = root / ('usr/lib' if 'musl' in row.key else 'lib')
@@ -85,7 +98,7 @@ def accept(row, compiler, llvm, packages, out, source, config):
         libc = lib / ('libc.so' if 'musl' in row.key else 'libc.so.6')
         command = [row.linker, '-pie', '--dynamic-linker', '/lib/' + loader, '-o', str(exe),
                    str(lib / 'Scrt1.o'), str(lib / 'crti.o'), str(counter), *objects,
-                   str(platform), str(libc), str(lib / 'crtn.o')]
+                   '--start-group', *archives, str(platform), '--end-group', str(libc), str(lib / 'crtn.o')]
         if 'musl' not in row.key:
             command.append(str(lib / 'libm.so.6'))
     run(command)

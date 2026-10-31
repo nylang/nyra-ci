@@ -92,6 +92,22 @@ class NativePolicyTests(unittest.TestCase):
 
 
 class PublicationTests(unittest.TestCase):
+    def test_publication_patch_preserves_the_reviewed_tag(self):
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / 'asset'
+            file.write_bytes(b'accepted')
+            body = 'Nyra SDK v9.0.0\nSource: ' + 'a' * 40 + '\n\nFixture\n\nQualified by CI using g1-g2-v1; exact accepted tool bytes. Runtime execution levels are recorded per target. Unsigned and not notarized.'
+            release = dict(id=1, body=body, prerelease=False, draft=True, html_url='https://example.test/release')
+            asset = dict(name='asset', state='uploaded', size=8, digest='sha256:' + sha(file))
+            github = Mock()
+            github.api.side_effect = [dict(private=False, full_name='nylang/sdk'), [asset], [asset],
+                                      dict(release, draft=False)]
+            with patch('publish_bundle.find_release', return_value=release), patch('publish_bundle.policy', return_value=POLICY):
+                publish_bundle.publish(github, [file], PLAN, 'v9.0.0')
+            github.upload.assert_not_called()
+            self.assertEqual(github.api.call_args.args[1], {'tag_name': 'v9.0.0', 'draft': False})
+            self.assertEqual(github.api.call_args.kwargs['method'], 'PATCH')
+
     def test_already_published_matching_bytes_are_read_only(self):
         with tempfile.TemporaryDirectory() as directory:
             file = Path(directory) / 'asset'

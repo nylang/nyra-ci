@@ -41,6 +41,10 @@ def verify_catalog(directory, host, plan, pin):
 
 def stage(directory, host, plan, pin, work, state, archive, receipt_file):
     value = verify_catalog(directory, host, plan, pin)
+    sdk = archive.parent / 'sdk'
+    if sha(sdk / 'manifest.json') != state['sdk_manifest_sha256']:
+        raise ValueError('retained native SDK manifest differs during target import')
+    state['sdk'] = str(sdk)
     public = ROOT / 'public-output'
     shutil.rmtree(public, ignore_errors=True)
     public.mkdir()

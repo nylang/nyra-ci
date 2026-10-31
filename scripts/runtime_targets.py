@@ -77,7 +77,7 @@ def produce():
         if key in {r['key'] for r in records}:
             if key in ('linux-arm64','linux-riscv64','windows-arm64') and key not in {r['key'] for r in host_records}:
                 from host_compile import compile_host
-                host_records.append(compile_host(target(key,llvm,config),compiler,llvm,snapshot,Path(build['workspace'])/'bootstrap',output/'host-objects'/key))
+                host_records.append(compile_host(target(key,llvm,config),compiler,llvm,snapshot,Path(build['workspace'])/'bootstrap',output/'host-objects'/key,prefix.get('host_tool_prefix',{}).get(key)))
             print('Retain complete target profile without rebuild/test: '+key,flush=True)
             continue
         if prefix:

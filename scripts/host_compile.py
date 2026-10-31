@@ -6,10 +6,27 @@ from build_sdk import run, cache_root
 from release_common import sha, write
 
 
-def compile_host(row, compiler, llvm, snapshot, bootstrap, out):
+def compile_host(row, compiler, llvm, snapshot, bootstrap, out, retained=None):
     out.mkdir(parents=True, exist_ok=True)
     records = []
+    reused = {}
+    if retained:
+        if retained['compiler_sha256'] != sha(compiler):raise ValueError('retained host-tool builder changed')
+        reused = {r['name']:r for r in retained['tools']}
+        if set(reused)!={'nyrac','nyra-analyzer','nyra'}:raise ValueError('incomplete retained host-tool prefix')
     for name, package in (('nyrac', 'nyra'), ('nyra-analyzer', 'analyzer'), ('nyra', 'package_manager')):
+        if name in reused:
+            record=reused[name]
+            dest=out/name
+            if record['object_units']<=0 or len(record['objects'])!=record['object_units']:raise ValueError('empty retained host workset')
+            from tools.build.sdk_manifest import validate_object
+            for relative,digest in record['objects'].items():
+                obj=dest/relative
+                if not obj.resolve().is_relative_to(dest.resolve()) or obj.is_symlink() or sha(obj)!=digest:raise ValueError('retained host object changed')
+                validate_object(obj,row.arch,'windows' if row.key.startswith('windows') else 'linux',abi=row.abi)
+            records.append(record)
+            print('Retain complete host tool without compilation: '+row.key+' '+name,flush=True)
+            continue
         from tools.ci.runner_storage import check_space
         check_space(out)
         dest = out / name
@@ -34,7 +51,7 @@ def compile_host(row, compiler, llvm, snapshot, bootstrap, out):
     from tools.dev.paths import source_package_path
     bridges = [('nllvm', source_package_path(snapshot, 'nllvm') / 'private/nyra_llvm_initialize_all.c'),
                ('ngit', source_package_path(snapshot, 'ngit') / 'private/native/git_bridge.c')]
-    include = [llvm / 'include', bootstrap / 'package-manager/libgit2-1.9.7/include',
+    include = [Path(str(llvm).removeprefix('\\\\?\\')) / 'include', bootstrap / 'package-manager/libgit2-1.9.7/include',
                cache_root() / 'nyra-providers/openssl-3.5.9/include']
     native = []
     for name, source in bridges:

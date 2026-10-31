@@ -21,8 +21,8 @@ def admit(work, host, plan, pin):
     source=work/'source'
     if subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip()!=plan['source_commit'] or subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],cwd=source,text=True).strip():
         raise ValueError('continuation source is not the clean frozen checkout')
-    for section in ('files','consumer_files'):
-        for name,digest in value[section].items():
+    for section in ('files','consumer_files','host_workset_files'):
+        for name,digest in value.get(section,{}).items():
             path=work/'runtimes'/safe_name(name)
             if path.is_symlink() or not path.resolve().is_relative_to(work.resolve()) or sha(path)!=digest:
                 raise ValueError('completed-profile payload/consumer changed')

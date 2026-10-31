@@ -100,13 +100,19 @@
   "native_qualification_workflow": ".github/workflows/sdk-build.yml",
   "source_commit": "238d12ceacb479a238a9d9a878e8e1a1fc549f6a",
   "target_continuations": {
-    "darwin-arm64": {
-      "checkpoint_sha256": "ce33bcbd75bc4f382bf1c4e8f640906a4005d17228bea4764c882c20a84802c6",
+    "windows-x86_64": {
+      "checkpoint_sha256": "468e14ac4ef637eb0f87fffce9eaeadea9591c077f7221fa385a772168ba1130",
       "control_commit": "77d20c9ec51ea358a460bfc0dee97709fd5614c3",
-      "workspace": "41228338231-1-darwin-arm64"
+      "workspace": "41228338231-1-windows-x86_64"
     }
   },
   "target_imports": {
+    "darwin-arm64": {
+      "catalog_sha256": "5f9c00d4c11211b945c842e8c7d8740827798299acf3ce4122448e15c54c4483",
+      "control_commit": "5ff75ff456848441675dc93bf2f4536e55ab9770",
+      "qualification_attempt": 1,
+      "qualification_run": 41229226970
+    },
     "darwin-x86_64": {
       "catalog_sha256": "6a74a5a3b2d393066e9a47b29e351f760741067578312357ce4da17ac33eaa9e",
       "control_commit": "04b8b4fb7b6b46a4a3e639725cbaadf6c37de291",

@@ -1,0 +1,99 @@
+{
+  "source_commit": "238d12ceacb479a238a9d9a878e8e1a1fc549f6a",
+  "managed_imports": {
+    "darwin-arm64": {
+      "archive_sha256": "3ab9b0c03a6fc56af9c4db5386fae361987b099e365b4319f655dc12e106dc26",
+      "receipt_sha256": "5ed75bede7675f220eed215142af2dfee9f0734cbb70622ac2e6f59ff5de74ad",
+      "sdk_manifest_sha256": "56e857f03b3932df4d39d0811440d170868685fd8f91c1a310397d5998c487c6"
+    },
+    "darwin-x86_64": {
+      "archive_sha256": "6c97b5c6cc73a50d99fa2c591eae2382cb28fe5b978af2f8d4463b9d805aef8d",
+      "receipt_sha256": "423abdf575ef34f0719126742503d8da4333f988cba9f5abf0662160fa05cb13",
+      "sdk_manifest_sha256": "382a1edd456a2245c26030cf1214d8e31bc0058896048a44eb44597b9aa6d4d1"
+    },
+    "linux-x86_64": {
+      "archive_sha256": "897bca18939c910ac071c3c9e42353a765e7114f65fd690781d1357c6abd6a51",
+      "receipt_sha256": "bd7452ba1b0adb14bb19b21b311cd875635a18eae5af4e3f09f1fda202942230",
+      "sdk_manifest_sha256": "44a68b4db8c7cdcdf13a6c2ebf0ba1c853baf7bfc81cad75e0a5815278c51c17"
+    },
+    "windows-x86_64": {
+      "archive_sha256": "c74d3e4d67078024f4c74ad1c4514be6bd4783e4d923bd4e6922bb8d1cc82436",
+      "receipt_sha256": "fe0ceb9181cd987a1d32c0c25c72e09d19c5e58a4b7356f73c43252de2bc0c92",
+      "sdk_manifest_sha256": "9c697e4014c36e1e10ed4add3427080c71b9e54b909a30e2d93d13cfb0abb8c0"
+    }
+  },
+  "expected_native_inventory": {
+    "darwin-arm64": {
+      "regression": 538,
+      "compiler_units": {
+        "kernel": 85,
+        "stdlib": 363,
+        "yaml": 84,
+        "json": 34,
+        "package_core": 49,
+        "frontend": 471,
+        "nyra": 96,
+        "nllvm": 11,
+        "ntest": 5
+      },
+      "tool_units": {
+        "nyra-analyzer": 30,
+        "nyra": 16
+      }
+    },
+    "darwin-x86_64": {
+      "regression": 538,
+      "compiler_units": {
+        "kernel": 85,
+        "stdlib": 363,
+        "yaml": 84,
+        "json": 34,
+        "package_core": 49,
+        "frontend": 471,
+        "nyra": 96,
+        "nllvm": 11,
+        "ntest": 5
+      },
+      "tool_units": {
+        "nyra-analyzer": 30,
+        "nyra": 16
+      }
+    },
+    "linux-x86_64": {
+      "regression": 538,
+      "compiler_units": {
+        "kernel": 85,
+        "stdlib": 363,
+        "yaml": 84,
+        "json": 34,
+        "package_core": 49,
+        "frontend": 471,
+        "nyra": 96,
+        "nllvm": 11,
+        "ntest": 5
+      },
+      "tool_units": {
+        "nyra-analyzer": 30,
+        "nyra": 16
+      }
+    },
+    "windows-x86_64": {
+      "regression": 538,
+      "compiler_units": {
+        "kernel": 85,
+        "stdlib": 362,
+        "yaml": 84,
+        "json": 34,
+        "package_core": 49,
+        "frontend": 471,
+        "nyra": 96,
+        "nllvm": 11,
+        "ntest": 5
+      },
+      "tool_units": {
+        "nyra-analyzer": 30,
+        "nyra": 16
+      }
+    }
+  }
+}

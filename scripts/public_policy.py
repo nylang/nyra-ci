@@ -26,7 +26,8 @@ def _payload_allowed(name: str, host: str, targets: set[str]) -> bool:
         return _payload_allowed("/".join(("targets",parts[3],parts[1],*parts[4:])),host,targets)
     if name in {f"hosts/{host}/bin/{executable_name(tool, host)}" for tool in ("nyrac", "nyra-analyzer", "nyra")}:
         return True
-    if name == f"hosts/{host}/share/nyra/analyzer/analysis_options.yaml":
+    if name in {f"hosts/{host}/share/nyra/analyzer/analysis_options.yaml",
+                f"hosts/{host}/share/nyra/analyzer/coding_analysis_options.yaml"}:
         return True
     if len(parts) == 3 and parts[0] == "targets" and parts[1] in targets and parts[2] == "provider-requirements.json":
         return True

@@ -7,6 +7,11 @@ on:
         type: string
         default: main
         required: true
+      hosts:
+        description: Comma-separated native hosts; empty selects all four
+        type: string
+        default: ''
+        required: false
 permissions:
   contents: read
 concurrency:
@@ -17,6 +22,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
     outputs:
       source_commit: ${{ steps.source.outputs.source_commit }}
+      matrix: ${{ steps.source.outputs.matrix }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -24,21 +30,13 @@ jobs:
       - id: source
         env:
           NYRA_CI_SOURCE_REF: ${{ inputs.source_ref }}
+          NYRA_CI_HOSTS: ${{ inputs.hosts }}
         run: python3 -B scripts/prepare_source.py
   build:
     needs: prepare
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - host: darwin-arm64
-            labels: [self-hosted, macOS, ARM64, nyra-sdk, nyra-macos-arm64]
-          - host: darwin-x86_64
-            labels: [self-hosted, macOS, X64, nyra-sdk, nyra-macos-x86_64]
-          - host: linux-x86_64
-            labels: [self-hosted, Linux, X64, nyra-sdk, nyra-linux-x64]
-          - host: windows-x86_64
-            labels: [self-hosted, Windows, X64, nyra-sdk, nyra-windows-x64]
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     runs-on: ${{ matrix.labels }}
     timeout-minutes: 720
     concurrency:

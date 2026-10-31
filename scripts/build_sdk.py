@@ -125,10 +125,12 @@ def build():
         receipt.update(verify_providers(host))
         environment = verify_build_tools(host, sdk)
         suffix = '.exe' if host.startswith('windows-') else ''
-        compiler = sdk / 'hosts' / host / 'bin' / ('nyrac' + suffix)
+        from transition_seed import selected_compiler
+        compiler, selection = selected_compiler(host, source, sdk, cache_root())
+        receipt['bootstrap_selection'] = selection
         bootstrap = work / 'bootstrap'
         jobs = '1' if host.startswith('darwin-') else '2' if host.startswith('linux-') else '4'
-        run([sys.executable, '-B', 'build.py', 'bootstrap', '--bootstrap-sdk', sdk,
+        run([sys.executable, '-B', 'build.py', 'bootstrap', '--seed', compiler,
              '--out-dir', bootstrap, '-j', jobs,
              '--timeout', '7200', '--regression'], source, environment)
         candidate = work / 'sdk'

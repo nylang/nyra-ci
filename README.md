@@ -17,7 +17,9 @@ have neither its SSH key nor a compiler checkout.
   digest-check and remove a disposable draft. No compiler or complete suites
   are rebuilt/repeated.
 - **Qualify private native SDK candidates** resolves one source commit and runs
-  the complete native policy on all four hosts. It saves source-free SDK
+  the complete native policy on all four hosts by default. The optional `hosts`
+  input selects a comma-separated subset when other hosts already have retained
+  qualification; it does not change any selected host's acceptance policy. It saves source-free SDK
   archives and receipts; it does not publish.
 - **Qualify and release SDK** accepts an immutable `releases/vX.Y.Z.json` plan.
   A pushed control-repository version tag qualifies and publishes automatically.
@@ -128,3 +130,20 @@ The already accepted/published 1.0.4 is not requalified merely to migrate CI.
 Future source changes use a new release plan/version.
 
 After updating SDK_RELEASE_TOKEN, run **Publication credential preflight (no builds)**. It probes only destination permissions and does not repeat native seed checks or compiler suites.
+
+## Explicit compiler compatibility transitions
+
+Ordinary source releases bootstrap from the SDK selected by `sdk-seeds.json`.
+An incompatible source/API migration uses `transitional-seeds.json`: pin the
+source commit, each native compiler SHA-256 and its provenance. `required_versions`
+fails closed when an obligatory transition has no entry; absent or changed
+managed compiler bytes cannot fall back to the older compiler. Store these inputs
+under `nyra-bootstrap-transition/<version>/<host>/` in the managed host cache.
+
+`transition_seed.py` can link authenticated cross-compiled ObjectUnits on their
+matching native host using the existing pinned SDK LLVM/platform providers.
+The resulting executable is an explicit G0 input, never a shipped SDK or a
+qualification receipt. No language source, active bootstrap pointer or released
+archive is overwritten. The normal frozen-source G1/G2 and complete suites still
+qualify each final native product. Retire transition inputs after bootstrap
+adoption and the last active consumer; retain bounded identities separately.
